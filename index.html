@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-TW" class="h-full bg-neutral-950 text-neutral-100 selection:bg-indigo-500 selection:text-white">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>CloudCanvas - 即時協作無限畫布 (Cloudflare D1 + R2)</title>
+    <meta name="description" content="Figma 式的多人即時協作無限畫布，支援 Cloudflare D1 節點儲存、Cloudflare R2 圖片上傳、Google 登入與多人實時游標。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Kalam:wght@400;700&display=swap" rel="stylesheet" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body class="h-full w-full overflow-hidden antialiased select-none font-sans">
+    <div id="root" class="h-full w-full"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

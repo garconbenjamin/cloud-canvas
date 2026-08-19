@@ -1,0 +1,795 @@
+import React from 'react';
+import {
+  CanvasNode,
+  ToolMode,
+  Viewport,
+  UserProfile,
+  UserPresence,
+  CloudflareStatus,
+} from './types.ts';
+import { DEMO_USERS } from './lib/constants.ts';
+import { syncService } from './lib/syncService.ts';
+import { Canvas } from './components/Canvas.tsx';
+import { TopNavbar } from './components/TopNavbar.tsx';
+import { Toolbar } from './components/Toolbar.tsx';
+import { PropertyPanel } from './components/PropertyPanel.tsx';
+import { LayersPanel } from './components/LayersPanel.tsx';
+import { Minimap } from './components/Minimap.tsx';
+import { GoogleAuthModal } from './components/GoogleAuthModal.tsx';
+import { CloudflareDeployModal } from './components/CloudflareDeployModal.tsx';
+import { FloatingReaction } from './components/LiveReactions.tsx';
+
+export default function App() {
+  // Board & Nodes State
+  const [boardId] = React.useState('default');
+  const [boardTitle, setBoardTitle] = React.useState('CloudCanvas 協作主畫布');
+  const [nodes, setNodes] = React.useState<CanvasNode[]>([]);
+  const [selectedNodeIds, setSelectedNodeIds] = React.useState<string[]>([]);
+  const [currentTool, setCurrentTool] = React.useState<ToolMode>('select');
+
+  // Viewport (Infinite Canvas Pan & Zoom)
+  const [viewport, setViewport] = React.useState<Viewport>({
+    x: 120,
+    y: 80,
+    zoom: 1,
+  });
+
+  // User Authentication & Presences
+  const [currentUser, setCurrentUser] = React.useState<UserProfile>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cloudcanvas_user');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {}
+      }
+    }
+    return DEMO_USERS[0]; // Default to Kevin (kevin820422@gmail.com)
+  });
+
+  const [onlinePresences, setOnlinePresences] = React.useState<UserPresence[]>([]);
+  const [floatingReactions, setFloatingReactions] = React.useState<FloatingReaction[]>([]);
+  const [cloudflareStatus, setCloudflareStatus] = React.useState<CloudflareStatus | null>(null);
+
+  // Modals & Panels UI State
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [isDeployModalOpen, setIsDeployModalOpen] = React.useState(false);
+  const [isLayersPanelOpen, setIsLayersPanelOpen] = React.useState(false);
+
+  // Undo / Redo History Stack
+  const [history, setHistory] = React.useState<CanvasNode[][]>([]);
+  const [historyIndex, setHistoryIndex] = React.useState<number>(-1);
+  const isHistoryUpdate = React.useRef(false);
+
+  // Hidden file input ref for image upload tool
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // 1. Initial Data Fetch from Cloudflare D1 API
+  React.useEffect(() => {
+    const fetchBoardData = async () => {
+      try {
+        const res = await fetch(`/api/board/${boardId}/nodes`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.nodes)) {
+          setNodes(data.nodes);
+          setHistory([data.nodes]);
+          setHistoryIndex(0);
+        }
+      } catch (err) {
+        console.error('[Cloudflare D1] Failed to fetch board nodes:', err);
+      }
+    };
+
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        setCloudflareStatus(data);
+      } catch (err) {}
+    };
+
+    fetchBoardData();
+    fetchConfig();
+
+    const interval = setInterval(fetchConfig, 10000);
+    return () => clearInterval(interval);
+  }, [boardId]);
+
+  // 2. Setup Real-time WebSocket & Broadcast Sync
+  React.useEffect(() => {
+    syncService.connect(boardId, currentUser);
+
+    const unsubCreate = syncService.onNodeCreate((newNode) => {
+      setNodes((prev) => {
+        if (prev.some((n) => n.id === newNode.id)) return prev;
+        return [...prev, newNode];
+      });
+    });
+
+    const unsubUpdate = syncService.onNodeUpdate((updatedNode) => {
+      setNodes((prev) => prev.map((n) => (n.id === updatedNode.id ? updatedNode : n)));
+    });
+
+    const unsubBatch = syncService.onNodeBatchUpdate((updatedNodes) => {
+      setNodes((prev) => {
+        const map = new Map(prev.map((n) => [n.id, n]));
+        updatedNodes.forEach((n) => map.set(n.id, n));
+        return Array.from(map.values());
+      });
+    });
+
+    const unsubDelete = syncService.onNodeDelete((nodeId) => {
+      setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+      setSelectedNodeIds((prev) => prev.filter((id) => id !== nodeId));
+    });
+
+    const unsubBatchDelete = syncService.onNodeBatchDelete((nodeIds) => {
+      const set = new Set(nodeIds);
+      setNodes((prev) => prev.filter((n) => !set.has(n.id)));
+      setSelectedNodeIds((prev) => prev.filter((id) => !set.has(id)));
+    });
+
+    const unsubFull = syncService.onFullSync((allNodes) => {
+      setNodes(allNodes);
+    });
+
+    const unsubPresence = syncService.onPresence((users) => {
+      setOnlinePresences(users);
+    });
+
+    const unsubReaction = syncService.onReaction((r) => {
+      const newReaction: FloatingReaction = {
+        id: `reaction_${Date.now()}_${Math.random()}`,
+        emoji: r.emoji,
+        sender: r.sender,
+        x: r.x,
+        y: r.y,
+        timestamp: Date.now(),
+      };
+      setFloatingReactions((prev) => [...prev, newReaction]);
+
+      setTimeout(() => {
+        setFloatingReactions((prev) => prev.filter((item) => item.id !== newReaction.id));
+      }, 2500);
+    });
+
+    return () => {
+      unsubCreate();
+      unsubUpdate();
+      unsubBatch();
+      unsubDelete();
+      unsubBatchDelete();
+      unsubFull();
+      unsubPresence();
+      unsubReaction();
+      syncService.disconnect();
+    };
+  }, [boardId, currentUser]);
+
+  // Persist user changes to localStorage
+  const handleSelectUser = (user: UserProfile) => {
+    setCurrentUser(user);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cloudcanvas_user', JSON.stringify(user));
+    }
+    syncService.updateUserInfo(user);
+  };
+
+  // Push to Undo / Redo history helper
+  const pushHistory = (newNodes: CanvasNode[]) => {
+    if (isHistoryUpdate.current) {
+      isHistoryUpdate.current = false;
+      return;
+    }
+    setHistory((prev) => {
+      const sliced = prev.slice(0, historyIndex + 1);
+      return [...sliced, newNodes];
+    });
+    setHistoryIndex((prev) => prev + 1);
+  };
+
+  // 3. Node Mutations (Cloudflare D1 + WebSocket Broadcast)
+  const handleCreateNode = async (newNode: CanvasNode) => {
+    const nextNodes = [...nodes, newNode];
+    setNodes(nextNodes);
+    pushHistory(nextNodes);
+
+    syncService.sendNodeCreate(newNode);
+
+    try {
+      await fetch(`/api/board/${boardId}/nodes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ node: newNode }),
+      });
+    } catch (err) {
+      console.error('[D1 Write Error]:', err);
+    }
+  };
+
+  const handleUpdateNode = async (nodeId: string, updates: Partial<CanvasNode>) => {
+    const updated = nodes.map((n) =>
+      n.id === nodeId
+        ? {
+            ...n,
+            ...updates,
+            lastEditedBy: currentUser,
+            lastEditedAt: Date.now(),
+          }
+        : n
+    );
+    setNodes(updated);
+
+    const changedNode = updated.find((n) => n.id === nodeId);
+    if (changedNode) {
+      syncService.sendNodeUpdate(changedNode);
+
+      try {
+        await fetch(`/api/board/${boardId}/nodes`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ node: changedNode }),
+        });
+      } catch (err) {
+        console.error('[D1 Update Error]:', err);
+      }
+    }
+  };
+
+  // Rapid local transform during active dragging/resizing (60fps, no HTTP overhead)
+  const handleLocalTransformNodes = (updatedSubset: CanvasNode[]) => {
+    setNodes((prev) => {
+      const map = new Map<string, CanvasNode>(prev.map((n) => [n.id, n]));
+      updatedSubset.forEach((n) => map.set(n.id, n));
+      return Array.from(map.values());
+    });
+    syncService.sendNodeBatchUpdate(updatedSubset);
+  };
+
+  // Commit transform on drag/resize release (saves to D1 + adds to history)
+  const handleCommitTransformNodes = async (committedNodes: CanvasNode[]) => {
+    let nextAllNodes: CanvasNode[] = [];
+    setNodes((prev) => {
+      const map = new Map<string, CanvasNode>(prev.map((n) => [n.id, n]));
+      committedNodes.forEach((n) => map.set(n.id, n));
+      nextAllNodes = Array.from(map.values());
+      return nextAllNodes;
+    });
+
+    if (nextAllNodes.length > 0) {
+      pushHistory(nextAllNodes);
+    }
+
+    syncService.sendNodeBatchUpdate(committedNodes);
+
+    try {
+      await fetch(`/api/board/${boardId}/nodes/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodes: committedNodes }),
+      });
+    } catch (err) {
+      console.error('[D1 Batch Write Error]:', err);
+    }
+  };
+
+  const handleBatchUpdateNodes = async (updatedSubset: CanvasNode[]) => {
+    const map = new Map(nodes.map((n) => [n.id, n]));
+    updatedSubset.forEach((n) => map.set(n.id, n));
+    const nextNodes = Array.from(map.values());
+    setNodes(nextNodes);
+
+    syncService.sendNodeBatchUpdate(updatedSubset);
+
+    try {
+      await fetch(`/api/board/${boardId}/nodes/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodes: updatedSubset }),
+      });
+    } catch (err) {
+      console.error('[D1 Batch Write Error]:', err);
+    }
+  };
+
+  const handleDeleteNodes = async (nodeIds: string[]) => {
+    const set = new Set(nodeIds);
+    const nextNodes = nodes.filter((n) => !set.has(n.id));
+    setNodes(nextNodes);
+    setSelectedNodeIds([]);
+    pushHistory(nextNodes);
+
+    syncService.sendNodeBatchDelete(nodeIds);
+
+    try {
+      await fetch(`/api/board/${boardId}/nodes/batch-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodeIds }),
+      });
+    } catch (err) {
+      console.error('[D1 Batch Delete Error]:', err);
+    }
+  };
+
+  const handleDuplicateSelected = () => {
+    if (selectedNodeIds.length === 0) return;
+
+    const toDuplicate = nodes.filter((n) => selectedNodeIds.includes(n.id));
+    const newNodes = toDuplicate.map((n) => ({
+      ...n,
+      id: `node_${n.type}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      x: n.x + 30,
+      y: n.y + 30,
+      zIndex: nodes.length + 1,
+      createdBy: currentUser,
+      createdAt: Date.now(),
+      lastEditedBy: undefined,
+      lastEditedAt: undefined,
+    }));
+
+    const all = [...nodes, ...newNodes];
+    setNodes(all);
+    setSelectedNodeIds(newNodes.map((n) => n.id));
+    pushHistory(all);
+
+    newNodes.forEach((n) => {
+      syncService.sendNodeCreate(n);
+      fetch(`/api/board/${boardId}/nodes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ node: n }),
+      });
+    });
+  };
+
+  // Layer Ordering Operations
+  const handleBringToFront = () => {
+    if (selectedNodeIds.length === 0) return;
+    const maxZ = Math.max(...nodes.map((n) => n.zIndex || 1), 1);
+    const updated = nodes.map((n) =>
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: maxZ + 1 } : n
+    );
+    handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
+  };
+
+  const handleSendToBack = () => {
+    if (selectedNodeIds.length === 0) return;
+    const minZ = Math.min(...nodes.map((n) => n.zIndex || 1), 1);
+    const updated = nodes.map((n) =>
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: Math.max(0, minZ - 1) } : n
+    );
+    handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
+  };
+
+  const handleBringForward = () => {
+    if (selectedNodeIds.length === 0) return;
+    const updated = nodes.map((n) =>
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: (n.zIndex || 1) + 1 } : n
+    );
+    handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
+  };
+
+  const handleSendBackward = () => {
+    if (selectedNodeIds.length === 0) return;
+    const updated = nodes.map((n) =>
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: Math.max(0, (n.zIndex || 1) - 1) } : n
+    );
+    handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
+  };
+
+  // 4. Cloudflare R2 Image Upload Handler
+  const handleUploadImageFile = async (file: File, worldX: number, worldY: number) => {
+    const tempId = `node_image_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const tempNode: CanvasNode = {
+      id: tempId,
+      type: 'image',
+      x: worldX - 150,
+      y: worldY - 100,
+      width: 300,
+      height: 200,
+      rotation: 0,
+      zIndex: nodes.length + 1,
+      fillColor: '#18181b',
+      strokeColor: '#f97316',
+      strokeWidth: 2,
+      opacity: 1,
+      borderRadius: 12,
+      shadow: true,
+      text: file.name,
+      imageUrl: URL.createObjectURL(file),
+      r2Bucket: 'canvas-assets (上傳中...)',
+      createdBy: currentUser,
+      createdAt: Date.now(),
+    };
+
+    // Optimistic insert
+    handleCreateNode(tempNode);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userEmail', currentUser.email);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        handleUpdateNode(tempId, {
+          imageUrl: data.url,
+          r2Key: data.key,
+          r2Bucket: data.bucket,
+          fileSize: data.size,
+          mimeType: data.mimeType,
+          strokeColor: '#3f3f46',
+          strokeWidth: 0,
+        });
+      }
+    } catch (err) {
+      console.error('[Cloudflare R2 Upload Error]:', err);
+    }
+  };
+
+  // Undo / Redo
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      isHistoryUpdate.current = true;
+      const target = history[historyIndex - 1];
+      setNodes(target);
+      setHistoryIndex((prev) => prev - 1);
+      handleBatchUpdateNodes(target);
+    }
+  };
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      isHistoryUpdate.current = true;
+      const target = history[historyIndex + 1];
+      setNodes(target);
+      setHistoryIndex((prev) => prev + 1);
+      handleBatchUpdateNodes(target);
+    }
+  };
+
+  // Zoom Operations
+  const handleZoomIn = () => {
+    setViewport((prev) => ({ ...prev, zoom: Math.min(prev.zoom * 1.2, 5) }));
+  };
+
+  const handleZoomOut = () => {
+    setViewport((prev) => ({ ...prev, zoom: Math.max(prev.zoom * 0.8, 0.1) }));
+  };
+
+  const handleResetZoom = () => {
+    setViewport((prev) => ({ ...prev, zoom: 1 }));
+  };
+
+  const handleZoomToFit = () => {
+    if (nodes.length === 0) {
+      setViewport({ x: 100, y: 100, zoom: 1 });
+      return;
+    }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach((n) => {
+      minX = Math.min(minX, n.x);
+      minY = Math.min(minY, n.y);
+      maxX = Math.max(maxX, n.x + n.width);
+      maxY = Math.max(maxY, n.y + n.height);
+    });
+
+    const padding = 80;
+    const w = maxX - minX + padding * 2;
+    const h = maxY - minY + padding * 2;
+    const screenW = window.innerWidth - 300;
+    const screenH = window.innerHeight - 150;
+
+    const fitZoom = Math.min(screenW / w, screenH / h, 1.5);
+    const centerX = (window.innerWidth - w * fitZoom) / 2 - minX * fitZoom + padding * fitZoom;
+    const centerY = (window.innerHeight - h * fitZoom) / 2 - minY * fitZoom + padding * fitZoom;
+
+    setViewport({ x: centerX, y: centerY, zoom: fitZoom });
+  };
+
+  // Quick Preset Templates
+  const handleAddPresetTemplate = (presetKey: string) => {
+    const timestamp = Date.now();
+    const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+    const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+
+    if (presetKey === 'wireframe_card') {
+      const cardNode: CanvasNode = {
+        id: `node_card_${timestamp}`,
+        type: 'rectangle',
+        x: centerX - 160,
+        y: centerY - 140,
+        width: 320,
+        height: 240,
+        rotation: 0,
+        zIndex: nodes.length + 1,
+        fillColor: '#18181b',
+        strokeColor: '#6366f1',
+        strokeWidth: 2,
+        opacity: 1,
+        borderRadius: 16,
+        shadow: true,
+        text: '📱 UI 產品卡片\n\n- 即時互動狀態\n- Cloudflare D1 存儲',
+        fontSize: 16,
+        textColor: '#ffffff',
+        createdBy: currentUser,
+        createdAt: timestamp,
+      };
+      handleCreateNode(cardNode);
+    } else if (presetKey === 'brainstorm_pack') {
+      const colors = ['#fef08a', '#bbf7d0', '#bae6fd'];
+      colors.forEach((fill, i) => {
+        const sticky: CanvasNode = {
+          id: `node_sticky_${timestamp}_${i}`,
+          type: 'sticky',
+          x: centerX - 250 + i * 190,
+          y: centerY - 80,
+          width: 170,
+          height: 170,
+          rotation: (i - 1) * 3,
+          zIndex: nodes.length + 1 + i,
+          fillColor: fill,
+          strokeColor: '#facc15',
+          strokeWidth: 1,
+          opacity: 1,
+          borderRadius: 4,
+          shadow: true,
+          text: `想法 ${i + 1} ✨`,
+          fontSize: 16,
+          textColor: '#854d0e',
+          createdBy: currentUser,
+          createdAt: timestamp + i,
+        };
+        handleCreateNode(sticky);
+      });
+    } else if (presetKey === 'flowchart_box') {
+      const box1: CanvasNode = {
+        id: `node_fc_${timestamp}_1`,
+        type: 'rectangle',
+        x: centerX - 200,
+        y: centerY - 50,
+        width: 160,
+        height: 80,
+        rotation: 0,
+        zIndex: nodes.length + 1,
+        fillColor: '#1e1b4b',
+        strokeColor: '#38bdf8',
+        strokeWidth: 2,
+        opacity: 1,
+        borderRadius: 8,
+        shadow: true,
+        text: '用戶觸發操作',
+        fontSize: 14,
+        textColor: '#38bdf8',
+        createdBy: currentUser,
+        createdAt: timestamp,
+      };
+      const arrow: CanvasNode = {
+        id: `node_fc_${timestamp}_arrow`,
+        type: 'arrow',
+        x: centerX - 20,
+        y: centerY - 20,
+        width: 120,
+        height: 20,
+        rotation: 0,
+        zIndex: nodes.length + 2,
+        fillColor: 'transparent',
+        strokeColor: '#6366f1',
+        strokeWidth: 3,
+        opacity: 1,
+        borderRadius: 0,
+        shadow: false,
+        createdBy: currentUser,
+        createdAt: timestamp,
+      };
+      const box2: CanvasNode = {
+        id: `node_fc_${timestamp}_2`,
+        type: 'rectangle',
+        x: centerX + 120,
+        y: centerY - 50,
+        width: 180,
+        height: 80,
+        rotation: 0,
+        zIndex: nodes.length + 3,
+        fillColor: '#0f172a',
+        strokeColor: '#10b981',
+        strokeWidth: 2,
+        opacity: 1,
+        borderRadius: 8,
+        shadow: true,
+        text: 'D1 / R2 邊緣儲存',
+        fontSize: 14,
+        textColor: '#10b981',
+        createdBy: currentUser,
+        createdAt: timestamp,
+      };
+      handleCreateNode(box1);
+      handleCreateNode(arrow);
+      handleCreateNode(box2);
+    }
+  };
+
+  // Reset Board to default
+  const handleResetBoard = async () => {
+    try {
+      const res = await fetch(`/api/board/${boardId}/reset`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.nodes)) {
+        setNodes(data.nodes);
+        setSelectedNodeIds([]);
+      }
+    } catch (err) {}
+  };
+
+  // Export Canvas
+  const handleExportCanvas = (format: 'png' | 'svg' | 'json') => {
+    if (format === 'json') {
+      const json = JSON.stringify(nodes, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cloudcanvas-${boardId}-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // SVG or PNG quick download
+      window.print();
+    }
+  };
+
+  const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
+
+  return (
+    <div id="cloudcanvas-app-root" className="h-screen w-screen flex flex-col bg-neutral-950 text-neutral-100 overflow-hidden font-sans">
+      {/* Hidden File Input for Image Upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+            const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+            handleUploadImageFile(file, centerX, centerY);
+          }
+        }}
+      />
+
+      {/* Top Navigation Bar */}
+      <TopNavbar
+        boardTitle={boardTitle}
+        onUpdateBoardTitle={setBoardTitle}
+        onlineUsers={onlinePresences}
+        currentUser={currentUser}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenDeployModal={() => setIsDeployModalOpen(true)}
+        cloudflareStatus={cloudflareStatus}
+        onResetBoard={handleResetBoard}
+        onExportCanvas={handleExportCanvas}
+      />
+
+      {/* Main Workspace (Canvas + Sidebars) */}
+      <div className="flex-1 flex relative overflow-hidden">
+        {/* Left: Layers Panel */}
+        <LayersPanel
+          nodes={nodes}
+          selectedNodeIds={selectedNodeIds}
+          onSelectNode={(nodeId, isShift) => {
+            if (isShift) {
+              setSelectedNodeIds((prev) =>
+                prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId]
+              );
+            } else {
+              setSelectedNodeIds([nodeId]);
+            }
+          }}
+          onToggleLock={(nodeId) => {
+            const node = nodes.find((n) => n.id === nodeId);
+            if (node) handleUpdateNode(nodeId, { isLocked: !node.isLocked });
+          }}
+          onToggleHide={(nodeId) => {
+            const node = nodes.find((n) => n.id === nodeId);
+            if (node) handleUpdateNode(nodeId, { isHidden: !node.isHidden });
+          }}
+          isOpen={isLayersPanelOpen}
+          onToggleOpen={() => setIsLayersPanelOpen(!isLayersPanelOpen)}
+        />
+
+        {/* Center: Infinite Collaborative Canvas */}
+        <main className="flex-1 h-full relative">
+          <Canvas
+            nodes={nodes}
+            selectedNodeIds={selectedNodeIds}
+            onSelectNodes={setSelectedNodeIds}
+            onUpdateNode={handleUpdateNode}
+            onBatchUpdateNodes={handleBatchUpdateNodes}
+            onLocalTransformNodes={handleLocalTransformNodes}
+            onCommitTransformNodes={handleCommitTransformNodes}
+            onCreateNode={handleCreateNode}
+            onDeleteNodes={handleDeleteNodes}
+            currentTool={currentTool}
+            onToolChange={setCurrentTool}
+            viewport={viewport}
+            onViewportChange={setViewport}
+            currentUser={currentUser}
+            presences={onlinePresences}
+            reactions={floatingReactions}
+            onSendCursor={(cursor, selectedIds, isDragging) =>
+              syncService.sendCursorMove(cursor, selectedIds, isDragging)
+            }
+            onSendReaction={(emoji, x, y) => syncService.sendReaction(emoji, x, y)}
+            onUploadImageFile={handleUploadImageFile}
+          />
+
+          {/* Floating Figma-style Toolbar */}
+          <Toolbar
+            currentTool={currentTool}
+            onSelectTool={setCurrentTool}
+            canUndo={historyIndex > 0}
+            canRedo={historyIndex < history.length - 1}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            zoom={viewport.zoom}
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            onResetZoom={handleResetZoom}
+            onZoomToFit={handleZoomToFit}
+            onTriggerImageUpload={() => fileInputRef.current?.click()}
+            onSendReaction={(emoji) => {
+              const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
+              const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+              syncService.sendReaction(emoji, centerX, centerY);
+            }}
+            onAddPresetTemplate={handleAddPresetTemplate}
+          />
+
+          {/* Interactive Minimap */}
+          <Minimap
+            nodes={nodes}
+            viewport={viewport}
+            canvasWidth={window.innerWidth}
+            canvasHeight={window.innerHeight}
+            onNavigate={(newX, newY) => setViewport((prev) => ({ ...prev, x: newX, y: newY }))}
+          />
+        </main>
+
+        {/* Right: Property Inspector Sidebar */}
+        <PropertyPanel
+          selectedNodes={selectedNodes}
+          onUpdateNode={handleUpdateNode}
+          onDeleteSelected={() => handleDeleteNodes(selectedNodeIds)}
+          onDuplicateSelected={handleDuplicateSelected}
+          onBringForward={handleBringForward}
+          onSendBackward={handleSendBackward}
+          onBringToFront={handleBringToFront}
+          onSendToBack={handleSendToBack}
+          currentUser={currentUser}
+        />
+      </div>
+
+      {/* Google Auth & Multi-User Switcher Modal */}
+      <GoogleAuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onSelectUser={handleSelectUser}
+      />
+
+      {/* Cloudflare Deploy Modal */}
+      <CloudflareDeployModal
+        isOpen={isDeployModalOpen}
+        onClose={() => setIsDeployModalOpen(false)}
+        status={cloudflareStatus}
+      />
+    </div>
+  );
+}

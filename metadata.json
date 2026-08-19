@@ -1,0 +1,6 @@
+{
+  "name": "CloudCanvas - Realtime Infinite Canvas",
+  "description": "Figma-style real-time collaborative infinite canvas with Cloudflare D1 & R2 storage, live multi-user cursors, and Google OAuth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
