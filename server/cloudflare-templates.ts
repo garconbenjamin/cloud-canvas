@@ -178,14 +178,17 @@ git push -u origin main
 
 ### 步驟 2：使用 Cloudflare Wrangler 建立 D1 資料庫
 \`\`\`bash
+# 安裝依賴
+pnpm install
+
 # 登入 Cloudflare
-npx wrangler login
+pnpm dlx wrangler login
 
 # 建立 D1 資料庫
-npx wrangler d1 create canvas-d1-prod
+pnpm dlx wrangler d1 create canvas-d1-prod
 
 # 執行 SQL Migration 建表 (使用匯出的 schema.sql)
-npx wrangler d1 execute canvas-d1-prod --file=./schema.sql
+pnpm dlx wrangler d1 execute canvas-d1-prod --file=./schema.sql
 \`\`\`
 
 ---
@@ -193,7 +196,7 @@ npx wrangler d1 execute canvas-d1-prod --file=./schema.sql
 ### 步驟 3：建立 Cloudflare R2 存儲桶
 \`\`\`bash
 # 建立 R2 Bucket 存放畫布圖片
-npx wrangler r2 bucket create canvas-assets
+pnpm dlx wrangler r2 bucket create canvas-assets
 \`\`\`
 
 ---
@@ -204,7 +207,7 @@ npx wrangler r2 bucket create canvas-assets
 3. 選擇你的 GitHub 倉庫 \`cloudcanvas\`
 4. 構建設定：
    - **Framework preset**: \`Vite\`
-   - **Build command**: \`npm run build\`
+   - **Build command**: \`pnpm build\`
    - **Build output directory**: \`dist\`
 5. 進入 Settings -> **Functions** -> **D1 database bindings**:
    - Variable name: \`DB\`

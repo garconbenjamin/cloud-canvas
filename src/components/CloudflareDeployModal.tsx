@@ -257,7 +257,7 @@ git push -u origin main`}
                   <button
                     onClick={() =>
                       copyToClipboard(
-                        'npx wrangler d1 create canvas-d1-prod\n# 執行 SQL 建立資料表\nnpx wrangler d1 execute canvas-d1-prod --file=./schema.sql',
+                        'pnpm dlx wrangler d1 create canvas-d1-prod\n# 執行 SQL 建立資料表\npnpm dlx wrangler d1 execute canvas-d1-prod --file=./schema.sql',
                         'd1-cmd'
                       )
                     }
@@ -267,10 +267,10 @@ git push -u origin main`}
                   </button>
                   <pre className="overflow-x-auto text-[11px]">
 {`# 建立 D1 資料庫
-npx wrangler d1 create canvas-d1-prod
+pnpm dlx wrangler d1 create canvas-d1-prod
 
 # 匯入 schema.sql (點選上方分頁可直接下載或複製)
-npx wrangler d1 execute canvas-d1-prod --file=./schema.sql`}
+pnpm dlx wrangler d1 execute canvas-d1-prod --file=./schema.sql`}
                   </pre>
                 </div>
               </div>
@@ -283,7 +283,7 @@ npx wrangler d1 execute canvas-d1-prod --file=./schema.sql`}
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 relative group">
                   <button
                     onClick={() =>
-                      copyToClipboard('npx wrangler r2 bucket create canvas-assets', 'r2-cmd')
+                      copyToClipboard('pnpm dlx wrangler r2 bucket create canvas-assets', 'r2-cmd')
                     }
                     className="absolute top-2 right-2 p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                   >
@@ -291,7 +291,7 @@ npx wrangler d1 execute canvas-d1-prod --file=./schema.sql`}
                   </button>
                   <pre className="overflow-x-auto text-[11px]">
 {`# 建立 R2 Bucket 存放拖曳上傳之圖檔
-npx wrangler r2 bucket create canvas-assets`}
+pnpm dlx wrangler r2 bucket create canvas-assets`}
                   </pre>
                 </div>
               </div>
