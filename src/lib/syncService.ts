@@ -48,7 +48,10 @@ class SyncService {
     if (typeof window === 'undefined') return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
+    
+    // For production, WebSocket connects to the Durable Objects Worker
+    // For local development, WebSocket connects to the same host (server.ts handles it)
+    const wsHost = import.meta.env.VITE_WS_HOST || window.location.host;
     const params = new URLSearchParams({
       boardId,
       userId: user.id,
@@ -59,7 +62,7 @@ class SyncService {
       userAvatar: user.avatar,
     });
 
-    const wsUrl = `${protocol}//${host}/ws?${params.toString()}`;
+    const wsUrl = `${protocol}//${wsHost}/ws?${params.toString()}`;
 
     try {
       this.ws = new WebSocket(wsUrl);

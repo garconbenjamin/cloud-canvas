@@ -6,9 +6,15 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "dev:pages": "wrangler pages dev dist --d1 DB=canvas-d1-prod --r2 R2_BUCKET=canvas-assets",
+    "build": "vite build",
+    "build:legacy": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
-    "lint": "tsc --noEmit"
+    "pages:deploy": "wrangler pages deploy dist --project-name cloud-canvas",
+    "worker:deploy": "wrangler deploy",
+    "worker:dev": "wrangler dev",
+    "lint": "tsc --noEmit",
+    "types": "wrangler types"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1113.0",
@@ -37,6 +43,7 @@
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.3"
+    "vite": "^6.2.3",
+    "wrangler": "^4.125.0"
   }
 }
