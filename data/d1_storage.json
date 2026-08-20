@@ -1,0 +1,136 @@
+{
+  "boards": {
+    "default": {
+      "id": "default",
+      "title": "CloudCanvas 協作主畫布",
+      "createdAt": 1787250047055,
+      "updatedAt": 1787250047055,
+      "nodeCount": 4
+    }
+  },
+  "nodes": {
+    "default": [
+      {
+        "id": "node-welcome-rect",
+        "type": "rectangle",
+        "x": 80,
+        "y": 80,
+        "width": 380,
+        "height": 220,
+        "rotation": 0,
+        "zIndex": 1,
+        "fillColor": "#1e1b4b",
+        "strokeColor": "#6366f1",
+        "strokeWidth": 2,
+        "opacity": 0.95,
+        "borderRadius": 16,
+        "shadow": true,
+        "text": "🚀 CloudCanvas 歡迎！\n\n- Figma 級無限平移與縮放\n- Cloudflare D1 實時資料庫存檔\n- Cloudflare R2 拖曳圖片儲存\n- 多人即時同步與動態游標",
+        "fontSize": 16,
+        "fontFamily": "sans",
+        "fontWeight": "normal",
+        "textAlign": "left",
+        "textColor": "#e0e7ff",
+        "createdBy": {
+          "id": "user_owner",
+          "name": "Kevin (Owner)",
+          "email": "kevin820422@gmail.com",
+          "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+          "color": "#6366f1"
+        },
+        "createdAt": 1787249947055
+      },
+      {
+        "id": "node-sticky-idea",
+        "type": "sticky",
+        "x": 500,
+        "y": 90,
+        "width": 220,
+        "height": 210,
+        "rotation": -2,
+        "zIndex": 2,
+        "fillColor": "#fef08a",
+        "strokeColor": "#facc15",
+        "strokeWidth": 1,
+        "opacity": 1,
+        "borderRadius": 4,
+        "shadow": true,
+        "text": "💡 提示：\n拖曳任何圖片至畫布\n立即自動上傳至 R2！\n\n重整網頁後原封不動 ✨",
+        "fontSize": 16,
+        "fontFamily": "handwriting",
+        "fontWeight": "normal",
+        "textAlign": "left",
+        "textColor": "#854d0e",
+        "createdBy": {
+          "id": "user_alex",
+          "name": "Alex Design",
+          "email": "alex@design.co",
+          "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+          "color": "#ec4899"
+        },
+        "createdAt": 1787249967055
+      },
+      {
+        "id": "node-arch-circle",
+        "type": "circle",
+        "x": 180,
+        "y": 350,
+        "width": 180,
+        "height": 180,
+        "rotation": 0,
+        "zIndex": 3,
+        "fillColor": "#0f172a",
+        "strokeColor": "#38bdf8",
+        "strokeWidth": 2,
+        "opacity": 0.9,
+        "borderRadius": 999,
+        "shadow": true,
+        "text": "Cloudflare D1\n(SQLite at Edge)",
+        "fontSize": 15,
+        "fontFamily": "mono",
+        "fontWeight": "bold",
+        "textAlign": "center",
+        "textColor": "#38bdf8",
+        "createdBy": {
+          "id": "user_owner",
+          "name": "Kevin (Owner)",
+          "email": "kevin820422@gmail.com",
+          "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+          "color": "#6366f1"
+        },
+        "createdAt": 1787249987055
+      },
+      {
+        "id": "node-r2-card",
+        "type": "rectangle",
+        "x": 420,
+        "y": 360,
+        "width": 280,
+        "height": 160,
+        "rotation": 0,
+        "zIndex": 4,
+        "fillColor": "#18181b",
+        "strokeColor": "#f97316",
+        "strokeWidth": 2,
+        "opacity": 0.95,
+        "borderRadius": 12,
+        "shadow": true,
+        "text": "📦 Cloudflare R2\nS3 相容物件存儲\n支援圖片快速讀取與快取",
+        "fontSize": 15,
+        "fontFamily": "sans",
+        "fontWeight": "500",
+        "textAlign": "center",
+        "textColor": "#fdba74",
+        "createdBy": {
+          "id": "user_owner",
+          "name": "Kevin (Owner)",
+          "email": "kevin820422@gmail.com",
+          "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+          "color": "#6366f1"
+        },
+        "createdAt": 1787250007055
+      }
+    ]
+  },
+  "assets": []
+}

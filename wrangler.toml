@@ -1,0 +1,23 @@
+name = "cloud-canvas-app"
+main = "worker/index.ts"
+compatibility_date = "2024-04-01"
+
+[site]
+bucket = "./dist"
+
+# Cloudflare D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "canvas-d1-prod"
+database_id = "c011345a-01c5-4ffd-96b0-d633f86c94d4"
+
+# Cloudflare R2 Bucket Binding
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "canvas-assets"
+preview_bucket_name = "canvas-assets-preview"
+
+# Environment Variables
+[vars]
+ENVIRONMENT = "production"
+GOOGLE_CLIENT_ID = "221751833493-hr8bsok8ajqv1mv3kftsmdmdp0287jeu.apps.googleusercontent.com"
