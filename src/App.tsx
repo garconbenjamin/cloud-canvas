@@ -26,6 +26,13 @@ const GUEST_USER: UserProfile = {
   color: '#6366f1',
 };
 
+const LEGACY_DEFAULT_NODE_IDS = new Set([
+  'node-welcome-rect',
+  'node-sticky-idea',
+  'node-arch-circle',
+  'node-r2-card',
+]);
+
 export default function App() {
   // Board & Nodes State
   const [boardId] = React.useState('default');
@@ -81,14 +88,17 @@ export default function App() {
         const res = await fetch(`/api/board/${boardId}/nodes`);
         const data = await res.json();
         if (data.success && Array.isArray(data.nodes)) {
+          const loadedNodes = boardId === 'default'
+            ? data.nodes.filter((node: CanvasNode) => !LEGACY_DEFAULT_NODE_IDS.has(node.id))
+            : data.nodes;
           setNodes((prev) => {
-            const remoteNodeIds = new Set(data.nodes.map((node: CanvasNode) => node.id));
+            const remoteNodeIds = new Set(loadedNodes.map((node: CanvasNode) => node.id));
             const localUploadPreviews = prev.filter(
               (node) => pendingUploadIds.current.has(node.id) && !remoteNodeIds.has(node.id)
             );
-            return [...data.nodes, ...localUploadPreviews];
+            return [...loadedNodes, ...localUploadPreviews];
           });
-          setHistory([data.nodes]);
+          setHistory([loadedNodes]);
           setHistoryIndex(0);
         }
       } catch (err) {

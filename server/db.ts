@@ -163,9 +163,9 @@ class D1DatabaseService {
           title: 'CloudCanvas 協作主畫布',
           createdAt: Date.now(),
           updatedAt: Date.now(),
-          nodeCount: DEFAULT_NODES.length,
+          nodeCount: 0,
         };
-        this.data.nodes[defaultBoardId] = [...DEFAULT_NODES];
+        this.data.nodes[defaultBoardId] = [];
         this.save();
       }
     } catch (err) {
@@ -185,12 +185,7 @@ class D1DatabaseService {
 
   public getBoardNodes(boardId: string): CanvasNode[] {
     if (!this.data.nodes[boardId]) {
-      if (boardId === 'default') {
-        this.data.nodes[boardId] = [...DEFAULT_NODES];
-        this.save();
-      } else {
-        this.data.nodes[boardId] = [];
-      }
+      this.data.nodes[boardId] = [];
     }
     return this.data.nodes[boardId] || [];
   }
@@ -266,7 +261,7 @@ class D1DatabaseService {
   }
 
   public resetToDefault(boardId: string): CanvasNode[] {
-    this.data.nodes[boardId] = JSON.parse(JSON.stringify(DEFAULT_NODES));
+    this.data.nodes[boardId] = [];
     this.updateBoardMetadata(boardId);
     this.save();
     return this.data.nodes[boardId];

@@ -16,8 +16,9 @@ export async function onRequest(context) {
     // Delete all nodes for this board
     await env.DB.prepare('DELETE FROM nodes WHERE board_id = ?').bind(boardId).run();
 
-    // Insert default nodes
-    const defaultNodes = [
+    // New/reset canvases are intentionally empty.
+    const defaultNodes = [];
+    /* const legacyDefaultNodes = [
       {
         id: 'node-welcome-rect',
         type: 'rectangle',
@@ -66,7 +67,7 @@ export async function onRequest(context) {
       )
     );
 
-    await env.DB.batch(stmts);
+    await env.DB.batch(stmts); */
 
     return new Response(JSON.stringify({ success: true, nodes: defaultNodes }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
