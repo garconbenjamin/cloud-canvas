@@ -172,6 +172,30 @@ wss.on('connection', (ws: WebSocket, req) => {
 // REST API Routes (Cloudflare D1 & R2)
 // ==========================================
 
+app.get('/api/board/:id', (req: Request, res: Response) => {
+  const board = dbService.getBoard(req.params.id);
+  if (!board) return res.status(404).json({ success: false, error: 'Board not found' });
+  return res.json({ success: true, board });
+});
+
+app.post('/api/boards', (req: Request, res: Response) => {
+  const { id, ownerId, title } = req.body || {};
+  if (!id || !ownerId) return res.status(400).json({ success: false, error: 'id and ownerId are required' });
+  return res.json({ success: true, board: dbService.createBoard(id, ownerId, title) });
+});
+
+app.get('/api/boards', (req: Request, res: Response) => {
+  const ownerId = String(req.query.ownerId || '');
+  return res.json({ success: true, boards: ownerId ? dbService.listBoards(ownerId) : [] });
+});
+
+app.patch('/api/board/:id', (req: Request, res: Response) => {
+  const { ownerId, title } = req.body || {};
+  const board = dbService.updateBoardTitle(req.params.id, ownerId, title || '');
+  if (!board) return res.status(403).json({ success: false, error: 'Only the board owner can rename it' });
+  return res.json({ success: true, board });
+});
+
 // 1. Health & Config status
 app.get('/api/config', (req: Request, res: Response) => {
   const r2Status = r2Service.getStatus();

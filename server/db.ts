@@ -155,12 +155,16 @@ class D1DatabaseService {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
         this.data = JSON.parse(raw);
+        Object.values(this.data.boards).forEach((board) => {
+          if (!board.ownerId) board.ownerId = '';
+        });
       } else {
         // Initialize default board
         const defaultBoardId = 'default';
         this.data.boards[defaultBoardId] = {
           id: defaultBoardId,
           title: 'CloudCanvas 協作主畫布',
+          ownerId: '',
           createdAt: Date.now(),
           updatedAt: Date.now(),
           nodeCount: 0,
@@ -303,6 +307,7 @@ class D1DatabaseService {
       this.data.boards[boardId] = {
         id: boardId,
         title: boardId === 'default' ? 'CloudCanvas 協作主畫布' : `畫布 ${boardId}`,
+        ownerId: '',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodeCount: 0,
@@ -310,6 +315,32 @@ class D1DatabaseService {
     }
     this.data.boards[boardId].updatedAt = Date.now();
     this.data.boards[boardId].nodeCount = this.data.nodes[boardId]?.length || 0;
+  }
+
+  public getBoard(boardId: string): Board | null {
+    return this.data.boards[boardId] || null;
+  }
+
+  public createBoard(boardId: string, ownerId: string, title = '未命名畫布'): Board {
+    const now = Date.now();
+    const board: Board = { id: boardId, title, ownerId, createdAt: now, updatedAt: now, nodeCount: 0 };
+    this.data.boards[boardId] = board;
+    this.data.nodes[boardId] = [];
+    this.save();
+    return board;
+  }
+
+  public updateBoardTitle(boardId: string, ownerId: string, title: string): Board | null {
+    const board = this.data.boards[boardId];
+    if (!board || board.ownerId !== ownerId) return null;
+    board.title = title.trim() || board.title;
+    board.updatedAt = Date.now();
+    this.save();
+    return board;
+  }
+
+  public listBoards(ownerId: string): Board[] {
+    return Object.values(this.data.boards).filter((board) => board.ownerId === ownerId);
   }
 
   public generateD1SqlDump(boardId: string = 'default'): string {

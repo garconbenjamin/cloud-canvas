@@ -16,6 +16,8 @@ import {
 interface TopNavbarProps {
   boardTitle: string;
   onUpdateBoardTitle: (title: string) => void;
+  canEditBoardTitle: boolean;
+  boardOwnerName: string;
   onlineUsers: UserPresence[];
   currentUser: UserProfile;
   onOpenAuthModal: () => void;
@@ -28,6 +30,8 @@ interface TopNavbarProps {
 export const TopNavbar: React.FC<TopNavbarProps> = ({
   boardTitle,
   onUpdateBoardTitle,
+  canEditBoardTitle,
+  boardOwnerName,
   onlineUsers,
   currentUser,
   onOpenAuthModal,
@@ -50,6 +54,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
     if (titleInput.trim() && titleInput !== boardTitle) {
       onUpdateBoardTitle(titleInput.trim());
     }
+  };
+
+  const handleTitleCancel = () => {
+    setTitleInput(boardTitle);
+    setIsEditingTitle(false);
   };
 
   const handleOpenSecondWindow = () => {
@@ -87,16 +96,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         {/* Board Title */}
         {isEditingTitle ? (
-          <input
-            autoFocus
-            type="text"
-            value={titleInput}
-            onChange={(e) => setTitleInput(e.target.value)}
-            onBlur={handleTitleSubmit}
-            onKeyDown={(e) => e.key === 'Enter' && handleTitleSubmit()}
-            className="px-2 py-1 rounded bg-neutral-950 border border-indigo-500 text-xs font-semibold text-white outline-none max-w-[200px]"
-          />
-        ) : (
+          <div className="flex items-center gap-1">
+            <input
+              autoFocus
+              type="text"
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              onBlur={handleTitleSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleTitleSubmit();
+                if (e.key === 'Escape') handleTitleCancel();
+              }}
+              className="px-2 py-1 rounded bg-neutral-950 border border-indigo-500 text-xs font-semibold text-white outline-none max-w-[200px]"
+            />
+            <button onMouseDown={(e) => e.preventDefault()} onClick={handleTitleCancel} className="text-xs text-neutral-400 hover:text-white px-1" title="取消修改">取消</button>
+          </div>
+        ) : canEditBoardTitle ? (
           <button
             onClick={() => setIsEditingTitle(true)}
             className="text-xs font-semibold text-neutral-300 hover:text-white px-2 py-1 rounded hover:bg-neutral-800/80 transition-colors truncate max-w-[180px]"
@@ -104,7 +119,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           >
             {boardTitle}
           </button>
+        ) : (
+          <span className="text-xs font-semibold text-neutral-300 px-2 py-1 truncate max-w-[180px]" title="只有畫布建立者可以修改名稱">{boardTitle}</span>
         )}
+
+        <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-neutral-500 border-l border-neutral-800 pl-3" title="畫布建立者">
+          <ShieldCheck className="w-3 h-3 text-indigo-400" />
+          Owner: <span className="text-neutral-300 max-w-[120px] truncate">{boardOwnerName}</span>
+        </span>
 
         {/* Cloudflare D1 & R2 Status Indicator */}
         <div className="hidden lg:flex items-center gap-2">

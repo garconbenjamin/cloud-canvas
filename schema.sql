@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS boards (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
+  owner_id TEXT NOT NULL DEFAULT '',
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   node_count INTEGER DEFAULT 0

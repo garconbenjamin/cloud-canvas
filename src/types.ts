@@ -119,6 +119,7 @@ export interface CloudflareStatus {
 export interface Board {
   id: string;
   title: string;
+  ownerId: string;
   createdAt: number;
   updatedAt: number;
   nodeCount: number;

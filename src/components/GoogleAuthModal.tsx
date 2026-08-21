@@ -39,6 +39,7 @@ interface GoogleAuthModalProps {
   onSelectUser: (user: UserProfile) => void;
   onSignOut: () => void;
   googleClientId?: string;
+  googleOnly?: boolean;
 }
 
 export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
@@ -48,6 +49,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   onSelectUser,
   onSignOut,
   googleClientId,
+  googleOnly = false,
 }) => {
   const [customName, setCustomName] = React.useState('');
   const [customEmail, setCustomEmail] = React.useState('');
@@ -230,7 +232,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
         )}
 
         {/* Quick Multi-user / Persona Switcher */}
-        {import.meta.env.DEV && <div className="space-y-2">
+        {!googleOnly && import.meta.env.DEV && <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-neutral-400">
             <span className="font-semibold">快速切換測試身份（測試多人同步）</span>
             <span className="text-[11px] text-indigo-400">一鍵切換游標</span>
@@ -279,7 +281,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
         </div>}
 
         {/* Custom Persona / Google Email input */}
-        {import.meta.env.DEV && <form onSubmit={handleCreateCustom} className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs">
+        {!googleOnly && import.meta.env.DEV && <form onSubmit={handleCreateCustom} className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs">
           <span className="font-semibold text-neutral-400">或自訂 Google 協作者名稱</span>
           <div className="flex gap-2">
             <input
