@@ -14,7 +14,6 @@ import { StickyNode } from './nodes/StickyNode.tsx';
 import { ImageNode } from './nodes/ImageNode.tsx';
 import { ArrowNode } from './nodes/ArrowNode.tsx';
 import { LiveCursors } from './LiveCursors.tsx';
-import { LiveReactions, FloatingReaction } from './LiveReactions.tsx';
 import { STICKY_COLORS } from '../lib/constants.ts';
 
 interface CanvasProps {
@@ -33,9 +32,8 @@ interface CanvasProps {
   onViewportChange: (viewport: Viewport) => void;
   currentUser: UserProfile;
   presences: UserPresence[];
-  reactions: FloatingReaction[];
+  showHoverInfo: boolean;
   onSendCursor: (cursor: { x: number; y: number } | null, selectedIds: string[], isDragging?: boolean) => void;
-  onSendReaction: (emoji: string, x: number, y: number) => void;
   onUploadImageFile: (file: File, x: number, y: number) => void;
 }
 
@@ -57,9 +55,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   onViewportChange,
   currentUser,
   presences,
-  reactions,
+  showHoverInfo,
   onSendCursor,
-  onSendReaction,
   onUploadImageFile,
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
@@ -98,6 +95,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     initialRotation: number;
   } | null>(null);
   const [isNearRotationCorner, setIsNearRotationCorner] = React.useState(false);
+  const [hoveredNodeId, setHoveredNodeId] = React.useState<string | null>(null);
 
   // Drag over state for file drop visual feedback
   const [isDragOverFile, setIsDragOverFile] = React.useState(false);
@@ -705,6 +703,10 @@ export const Canvas: React.FC<CanvasProps> = ({
         key={node.id}
         id={`canvas-node-wrapper-${node.id}`}
         onMouseDown={(e) => handleNodeMouseDown(e, node)}
+        onMouseEnter={() => {
+          if (currentTool === 'select' && showHoverInfo) setHoveredNodeId(node.id);
+        }}
+        onMouseLeave={() => setHoveredNodeId((id) => (id === node.id ? null : id))}
         className={`absolute select-none pointer-events-auto cursor-move transition-shadow ${
           isSelected ? 'ring-2 ring-indigo-500 ring-offset-2 ring-offset-neutral-950 z-30' : ''
         }`}
@@ -716,6 +718,13 @@ export const Canvas: React.FC<CanvasProps> = ({
           display: node.isHidden ? 'none' : 'block',
         }}
       >
+        {showHoverInfo && currentTool === 'select' && hoveredNodeId === node.id && (
+          <div className="absolute -inset-1 rounded-sm border border-cyan-300/90 pointer-events-none z-40">
+            <div className="absolute -top-7 left-0 px-2 py-1 rounded bg-neutral-950/95 border border-cyan-400/60 text-[10px] text-cyan-100 whitespace-nowrap shadow-lg">
+              加入者：{node.createdBy?.name || '未知使用者'}
+            </div>
+          </div>
+        )}
         {/* Node Body */}
         {node.type === 'rectangle' && (
           <RectangleNode
@@ -899,9 +908,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         currentUserId={currentUser.id}
         viewport={viewport}
       />
-
-      {/* Live Floating Reactions */}
-      <LiveReactions reactions={reactions} viewport={viewport} />
 
       {/* Drag Over File Upload Overlay */}
       {isDragOverFile && (

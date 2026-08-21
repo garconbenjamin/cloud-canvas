@@ -14,8 +14,6 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Smile,
-  Sparkles,
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -31,8 +29,6 @@ interface ToolbarProps {
   onResetZoom: () => void;
   onZoomToFit: () => void;
   onTriggerImageUpload: () => void;
-  onSendReaction: (emoji: string) => void;
-  onAddPresetTemplate: (presetKey: string) => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -48,11 +44,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onResetZoom,
   onZoomToFit,
   onTriggerImageUpload,
-  onSendReaction,
-  onAddPresetTemplate,
 }) => {
-  const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
-  const [showTemplateMenu, setShowTemplateMenu] = React.useState(false);
 
   const tools: Array<{
     id: ToolMode;
@@ -68,8 +60,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     { id: 'sticky', label: '便利貼 (S)', icon: StickyNote, shortcut: 'S' },
     { id: 'arrow', label: '箭頭 (A)', icon: ArrowUpRight, shortcut: 'A' },
   ];
-
-  const emojis = ['🔥', '❤️', '👍', '🚀', '💡', '🎉', '👏', '👀'];
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2">
@@ -113,89 +103,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
         {/* Divider */}
         <div className="w-[1px] h-6 bg-neutral-800 mx-1" />
-
-        {/* Templates Dropdown Button */}
-        <div className="relative">
-          <button
-            id="btn-templates-menu"
-            onClick={() => setShowTemplateMenu(!showTemplateMenu)}
-            title="常用快速範本"
-            className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-neutral-800 hover:text-amber-300 text-neutral-300 transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-amber-400" />
-          </button>
-
-          {showTemplateMenu && (
-            <div className="absolute bottom-12 left-0 w-48 p-2 rounded-xl bg-neutral-900 border border-neutral-800 shadow-2xl backdrop-blur-xl flex flex-col gap-1 text-xs">
-              <span className="px-2 py-1 text-[11px] font-semibold text-neutral-400">快速插入範本</span>
-              <button
-                onClick={() => {
-                  onAddPresetTemplate('wireframe_card');
-                  setShowTemplateMenu(false);
-                }}
-                className="px-2 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                📱 UI 介面卡片
-              </button>
-              <button
-                onClick={() => {
-                  onAddPresetTemplate('brainstorm_pack');
-                  setShowTemplateMenu(false);
-                }}
-                className="px-2 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                💡 頭腦風暴便利貼組
-              </button>
-              <button
-                onClick={() => {
-                  onAddPresetTemplate('flowchart_box');
-                  setShowTemplateMenu(false);
-                }}
-                className="px-2 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                🔄 流程圖節點與箭頭
-              </button>
-              <button
-                onClick={() => {
-                  onAddPresetTemplate('d1_architecture');
-                  setShowTemplateMenu(false);
-                }}
-                className="px-2 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                ⚡ Cloudflare D1/R2 架構圖
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Real-time Emoji Reactions Bar */}
-        <div className="relative">
-          <button
-            id="btn-reaction-picker"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            title="傳送即時互動表情 (E)"
-            className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-neutral-800 hover:text-white text-neutral-300 transition-all"
-          >
-            <Smile className="w-4 h-4 text-emerald-400" />
-          </button>
-
-          {showEmojiPicker && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 p-2 rounded-2xl bg-neutral-900/95 border border-neutral-800 shadow-2xl backdrop-blur-xl flex items-center gap-1.5">
-              {emojis.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => {
-                    onSendReaction(emoji);
-                    setShowEmojiPicker(false);
-                  }}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-neutral-800 text-lg hover:scale-125 transition-transform"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Divider */}
         <div className="w-[1px] h-6 bg-neutral-800 mx-1" />

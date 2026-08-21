@@ -17,6 +17,12 @@ export const Minimap: React.FC<MinimapProps> = ({
   onNavigate,
 }) => {
   const [isExpanded, setIsExpanded] = React.useState(true);
+  const [position, setPosition] = React.useState(() => ({
+    right: 24,
+    bottom: 24,
+  }));
+  const dragRef = React.useRef<{ x: number; y: number; right: number; bottom: number } | null>(null);
+  const didDragRef = React.useRef(false);
   const mapWidth = 180;
   const mapHeight = 110;
 
@@ -57,6 +63,10 @@ export const Minimap: React.FC<MinimapProps> = ({
   const viewH = (canvasHeight / viewport.zoom) * scale;
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
@@ -68,6 +78,29 @@ export const Minimap: React.FC<MinimapProps> = ({
     const newViewportY = -targetWorldY * viewport.zoom + canvasHeight / 2;
 
     onNavigate(newViewportX, newViewportY);
+  };
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragRef.current = { x: e.clientX, y: e.clientY, ...position };
+
+    const handleDrag = (event: MouseEvent) => {
+      if (!dragRef.current) return;
+      const dx = event.clientX - dragRef.current.x;
+      const dy = event.clientY - dragRef.current.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) didDragRef.current = true;
+      setPosition({
+        right: Math.max(8, dragRef.current.right - dx),
+        bottom: Math.max(8, dragRef.current.bottom - dy),
+      });
+    };
+    const handleDragEnd = () => {
+      dragRef.current = null;
+      window.removeEventListener('mousemove', handleDrag);
+      window.removeEventListener('mouseup', handleDragEnd);
+    };
+    window.addEventListener('mousemove', handleDrag);
+    window.addEventListener('mouseup', handleDragEnd);
   };
 
   if (!isExpanded) {
@@ -85,9 +118,14 @@ export const Minimap: React.FC<MinimapProps> = ({
   return (
     <div
       id="minimap-container"
-      className="fixed bottom-6 right-6 z-30 p-2 rounded-2xl bg-neutral-900/90 border border-neutral-800 shadow-2xl backdrop-blur-xl flex flex-col gap-1 select-none"
+      className="fixed z-30 p-2 rounded-2xl bg-neutral-900/90 border border-neutral-800 shadow-2xl backdrop-blur-xl flex flex-col gap-1 select-none"
+      style={{ right: position.right, bottom: position.bottom }}
     >
-      <div className="flex items-center justify-between text-[10px] text-neutral-400 font-mono px-1">
+      <div
+        className="flex items-center justify-between text-[10px] text-neutral-400 font-mono px-1 cursor-move"
+        onMouseDown={handleDragStart}
+        title="拖曳移動小地圖"
+      >
         <span>MINIMAP</span>
         <button
           onClick={() => setIsExpanded(false)}

@@ -16,7 +16,6 @@ import { LayersPanel } from './components/LayersPanel.tsx';
 import { Minimap } from './components/Minimap.tsx';
 import { GoogleAuthModal } from './components/GoogleAuthModal.tsx';
 import { CloudflareDeployModal } from './components/CloudflareDeployModal.tsx';
-import { FloatingReaction } from './components/LiveReactions.tsx';
 
 const GUEST_USER: UserProfile = {
   id: 'guest',
@@ -79,25 +78,14 @@ export default function App() {
   });
 
   const [onlinePresences, setOnlinePresences] = React.useState<UserPresence[]>([]);
-  const [floatingReactions, setFloatingReactions] = React.useState<FloatingReaction[]>([]);
   const [cloudflareStatus, setCloudflareStatus] = React.useState<CloudflareStatus | null>(null);
 
   // Modals & Panels UI State
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
   const [isDeployModalOpen, setIsDeployModalOpen] = React.useState(false);
   const [isLayersPanelOpen, setIsLayersPanelOpen] = React.useState(false);
-
-  const showReaction = React.useCallback((reaction: Omit<FloatingReaction, 'id' | 'timestamp'>) => {
-    const newReaction: FloatingReaction = {
-      id: `reaction_${Date.now()}_${Math.random()}`,
-      timestamp: Date.now(),
-      ...reaction,
-    };
-    setFloatingReactions((prev) => [...prev, newReaction]);
-    setTimeout(() => {
-      setFloatingReactions((prev) => prev.filter((item) => item.id !== newReaction.id));
-    }, 2500);
-  }, []);
+  const [isPropertyPanelOpen, setIsPropertyPanelOpen] = React.useState(true);
+  const [showHoverInfo, setShowHoverInfo] = React.useState(true);
 
   // Undo / Redo History Stack
   const [history, setHistory] = React.useState<CanvasNode[][]>([]);
@@ -190,15 +178,6 @@ export default function App() {
       setOnlinePresences(users);
     });
 
-    const unsubReaction = syncService.onReaction((r) => {
-      showReaction({
-        emoji: r.emoji,
-        sender: r.sender,
-        x: r.x,
-        y: r.y,
-      });
-    });
-
     return () => {
       unsubCreate();
       unsubUpdate();
@@ -207,10 +186,9 @@ export default function App() {
       unsubBatchDelete();
       unsubFull();
       unsubPresence();
-      unsubReaction();
       syncService.disconnect();
     };
-  }, [boardId, currentUser, showReaction]);
+  }, [boardId, currentUser]);
 
   // Persist user changes to localStorage
   const handleSelectUser = React.useCallback((user: UserProfile) => {
@@ -573,128 +551,6 @@ export default function App() {
     setViewport({ x: centerX, y: centerY, zoom: fitZoom });
   };
 
-  // Quick Preset Templates
-  const handleAddPresetTemplate = (presetKey: string) => {
-    const timestamp = Date.now();
-    const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
-    const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-
-    if (presetKey === 'wireframe_card') {
-      const cardNode: CanvasNode = {
-        id: `node_card_${timestamp}`,
-        type: 'rectangle',
-        x: centerX - 160,
-        y: centerY - 140,
-        width: 320,
-        height: 240,
-        rotation: 0,
-        zIndex: nodes.length + 1,
-        fillColor: '#18181b',
-        strokeColor: '#6366f1',
-        strokeWidth: 2,
-        opacity: 1,
-        borderRadius: 16,
-        shadow: true,
-        text: '📱 UI 產品卡片\n\n- 即時互動狀態\n- Cloudflare D1 存儲',
-        fontSize: 16,
-        textColor: '#ffffff',
-        createdBy: currentUser,
-        createdAt: timestamp,
-      };
-      handleCreateNode(cardNode);
-    } else if (presetKey === 'brainstorm_pack') {
-      const colors = ['#fef08a', '#bbf7d0', '#bae6fd'];
-      colors.forEach((fill, i) => {
-        const sticky: CanvasNode = {
-          id: `node_sticky_${timestamp}_${i}`,
-          type: 'sticky',
-          x: centerX - 250 + i * 190,
-          y: centerY - 80,
-          width: 170,
-          height: 170,
-          rotation: (i - 1) * 3,
-          zIndex: nodes.length + 1 + i,
-          fillColor: fill,
-          strokeColor: '#facc15',
-          strokeWidth: 1,
-          opacity: 1,
-          borderRadius: 4,
-          shadow: true,
-          text: `想法 ${i + 1} ✨`,
-          fontSize: 16,
-          textColor: '#854d0e',
-          createdBy: currentUser,
-          createdAt: timestamp + i,
-        };
-        handleCreateNode(sticky);
-      });
-    } else if (presetKey === 'flowchart_box') {
-      const box1: CanvasNode = {
-        id: `node_fc_${timestamp}_1`,
-        type: 'rectangle',
-        x: centerX - 200,
-        y: centerY - 50,
-        width: 160,
-        height: 80,
-        rotation: 0,
-        zIndex: nodes.length + 1,
-        fillColor: '#1e1b4b',
-        strokeColor: '#38bdf8',
-        strokeWidth: 2,
-        opacity: 1,
-        borderRadius: 8,
-        shadow: true,
-        text: '用戶觸發操作',
-        fontSize: 14,
-        textColor: '#38bdf8',
-        createdBy: currentUser,
-        createdAt: timestamp,
-      };
-      const arrow: CanvasNode = {
-        id: `node_fc_${timestamp}_arrow`,
-        type: 'arrow',
-        x: centerX - 20,
-        y: centerY - 20,
-        width: 120,
-        height: 20,
-        rotation: 0,
-        zIndex: nodes.length + 2,
-        fillColor: 'transparent',
-        strokeColor: '#6366f1',
-        strokeWidth: 3,
-        opacity: 1,
-        borderRadius: 0,
-        shadow: false,
-        createdBy: currentUser,
-        createdAt: timestamp,
-      };
-      const box2: CanvasNode = {
-        id: `node_fc_${timestamp}_2`,
-        type: 'rectangle',
-        x: centerX + 120,
-        y: centerY - 50,
-        width: 180,
-        height: 80,
-        rotation: 0,
-        zIndex: nodes.length + 3,
-        fillColor: '#0f172a',
-        strokeColor: '#10b981',
-        strokeWidth: 2,
-        opacity: 1,
-        borderRadius: 8,
-        shadow: true,
-        text: 'D1 / R2 邊緣儲存',
-        fontSize: 14,
-        textColor: '#10b981',
-        createdBy: currentUser,
-        createdAt: timestamp,
-      };
-      handleCreateNode(box1);
-      handleCreateNode(arrow);
-      handleCreateNode(box2);
-    }
-  };
-
   // Reset Board to default
   const handleResetBoard = async () => {
     try {
@@ -802,11 +658,10 @@ export default function App() {
             onViewportChange={setViewport}
             currentUser={currentUser}
             presences={onlinePresences}
-            reactions={floatingReactions}
+            showHoverInfo={showHoverInfo}
             onSendCursor={(cursor, selectedIds, isDragging) =>
               syncService.sendCursorMove(cursor, selectedIds, isDragging)
             }
-            onSendReaction={(emoji, x, y) => syncService.sendReaction(emoji, x, y)}
             onUploadImageFile={handleUploadImageFile}
           />
 
@@ -824,13 +679,6 @@ export default function App() {
             onResetZoom={handleResetZoom}
             onZoomToFit={handleZoomToFit}
             onTriggerImageUpload={() => fileInputRef.current?.click()}
-            onSendReaction={(emoji) => {
-              const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
-              const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
-              showReaction({ emoji, sender: currentUser, x: centerX, y: centerY });
-              syncService.sendReaction(emoji, centerX, centerY);
-            }}
-            onAddPresetTemplate={handleAddPresetTemplate}
           />
 
           {/* Interactive Minimap */}
@@ -844,7 +692,7 @@ export default function App() {
         </main>
 
         {/* Right: Property Inspector Sidebar */}
-        <PropertyPanel
+          <PropertyPanel
           selectedNodes={selectedNodes}
           onUpdateNode={handleUpdateNode}
           onDeleteSelected={() => handleDeleteNodes(selectedNodeIds)}
@@ -854,6 +702,10 @@ export default function App() {
           onBringToFront={handleBringToFront}
           onSendToBack={handleSendToBack}
           currentUser={currentUser}
+          isOpen={isPropertyPanelOpen}
+          onToggleOpen={() => setIsPropertyPanelOpen((open) => !open)}
+          showHoverInfo={showHoverInfo}
+          onToggleHoverInfo={() => setShowHoverInfo((enabled) => !enabled)}
         />
       </div>
 

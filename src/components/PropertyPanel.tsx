@@ -33,6 +33,10 @@ interface PropertyPanelProps {
   onBringToFront: () => void;
   onSendToBack: () => void;
   currentUser: UserProfile;
+  isOpen: boolean;
+  onToggleOpen: () => void;
+  showHoverInfo: boolean;
+  onToggleHoverInfo: () => void;
 }
 
 export const PropertyPanel: React.FC<PropertyPanelProps> = ({
@@ -45,7 +49,31 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
   onBringToFront,
   onSendToBack,
   currentUser,
+  isOpen,
+  onToggleOpen,
+  showHoverInfo,
+  onToggleHoverInfo,
 }) => {
+  if (!isOpen) {
+    return (
+      <button
+        id="btn-open-property-panel"
+        onClick={onToggleOpen}
+        title="開啟屬性面板"
+        className="fixed top-16 right-4 z-30 p-2.5 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow-xl backdrop-blur-xl hover:bg-neutral-800 transition-all"
+      >
+        <Database className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  const hoverToggle = (
+    <label className="flex items-center justify-between gap-2 text-[11px] text-neutral-400 cursor-pointer">
+      <span>選取模式顯示 hover 資訊</span>
+      <input type="checkbox" checked={showHoverInfo} onChange={onToggleHoverInfo} />
+    </label>
+  );
+
   if (selectedNodes.length === 0) {
     return (
       <aside
@@ -55,7 +83,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         <div className="flex items-center gap-2 pb-3 border-b border-neutral-800 text-neutral-300 font-semibold">
           <Database className="w-4 h-4 text-orange-400" />
           <span>畫布屬性 / D1 資料庫</span>
+          <button onClick={onToggleOpen} className="ml-auto text-neutral-500 hover:text-white" title="收合屬性面板">收合</button>
         </div>
+        <div className="mt-3">{hoverToggle}</div>
 
         <div className="mt-6 flex flex-col items-center text-center p-6 rounded-xl border border-neutral-800/80 bg-neutral-950/40">
           <Sparkles className="w-8 h-8 text-neutral-600 mb-2" />
@@ -136,6 +166,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
         {/* Quick Actions */}
         <div className="flex items-center gap-1">
+          <button onClick={onToggleOpen} className="px-2 py-0.5 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white" title="收合屬性面板">收合</button>
           <button
             onClick={onDuplicateSelected}
             title="複製節點 (Ctrl+D)"
@@ -152,6 +183,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </button>
         </div>
       </div>
+      {hoverToggle}
 
       {/* Transform Coordinates & Dimensions */}
       <div className="space-y-2">
