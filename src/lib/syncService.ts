@@ -133,6 +133,10 @@ class SyncService {
   }
 
   private handleIncomingMessage(msg: SyncMessage) {
+    // BroadcastChannel is shared by every canvas tab, so only process
+    // messages that belong to the currently opened canvas.
+    if (msg.boardId !== this.boardId) return;
+
     // BroadcastChannel does not dispatch a message back to the object that sent
     // it. Do not filter by user id: two tabs often share the same signed-in user.
 

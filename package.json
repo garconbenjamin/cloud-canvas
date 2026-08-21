@@ -6,7 +6,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "tsx server.ts",
-    "dev:pages": "wrangler pages dev dist",
+    "dev:pages": "sh -c 'VITE_WS_HOST=localhost:3000 pnpm build || exit $?; pnpm dev & canvas_ws_pid=$!; trap \"kill $canvas_ws_pid 2>/dev/null\" EXIT INT TERM; wrangler pages dev dist'",
     "d1:local:init": "wrangler d1 execute canvas-d1-prod --local --persist-to .wrangler/state --file=./schema.sql --yes",
     "build": "vite build",
     "build:legacy": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",

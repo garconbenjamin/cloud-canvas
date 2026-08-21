@@ -45,6 +45,7 @@ export class BoardSync {
   }
 
   async handleSession(ws, user) {
+    ws.accept();
     this.sessions.set(ws, { ws, user, boardId: this.boardId });
 
     // Broadcast presence to all clients on this board

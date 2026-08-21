@@ -33,9 +33,24 @@ const LEGACY_DEFAULT_NODE_IDS = new Set([
   'node-r2-card',
 ]);
 
+function getOrCreateBoardId(): string {
+  if (typeof window === 'undefined') return 'default';
+
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const routeBoardId = pathParts[0] === 'board' ? pathParts[1] : undefined;
+  if (routeBoardId) return routeBoardId;
+
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const randomValues = new Uint32Array(6);
+  crypto.getRandomValues(randomValues);
+  const boardId = Array.from(randomValues, (value) => alphabet[value % alphabet.length]).join('');
+  window.history.replaceState({}, '', `/board/${boardId}`);
+  return boardId;
+}
+
 export default function App() {
   // Board & Nodes State
-  const [boardId] = React.useState('default');
+  const [boardId] = React.useState(getOrCreateBoardId);
   const [boardTitle, setBoardTitle] = React.useState('CloudCanvas 協作主畫布');
   const [nodes, setNodes] = React.useState<CanvasNode[]>([]);
   const [selectedNodeIds, setSelectedNodeIds] = React.useState<string[]>([]);
