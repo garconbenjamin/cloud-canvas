@@ -48,14 +48,7 @@ export default {
         'SELECT * FROM nodes WHERE board_id = ? ORDER BY z_index ASC'
       ).bind(boardId).all();
 
-      const parsedNodes = (results || []).map((row: any) => ({
-        ...row,
-        createdBy: JSON.parse(row.created_by || '{}'),
-        lastEditedBy: row.last_edited_by ? JSON.parse(row.last_edited_by) : undefined,
-        shadow: Boolean(row.shadow),
-        isLocked: Boolean(row.is_locked),
-        isHidden: Boolean(row.is_hidden),
-      }));
+      const parsedNodes = (results || []).map(mapNodeRow);
 
       return new Response(JSON.stringify({ success: true, nodes: parsedNodes }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -139,3 +132,54 @@ export default {
     });
   }
 };
+
+function parseUser(value: unknown) {
+  if (typeof value !== 'string' || !value) return undefined;
+  try {
+    const user = JSON.parse(value);
+    return user?.id ? user : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function mapNodeRow(row: any) {
+  return {
+    id: row.id,
+    type: row.type,
+    x: row.x,
+    y: row.y,
+    width: row.width,
+    height: row.height,
+    rotation: row.rotation,
+    zIndex: row.z_index,
+    fillColor: row.fill_color,
+    strokeColor: row.stroke_color,
+    strokeWidth: row.stroke_width,
+    opacity: row.opacity,
+    borderRadius: row.border_radius,
+    shadow: Boolean(row.shadow),
+    text: row.text,
+    fontSize: row.font_size,
+    fontFamily: row.font_family,
+    fontWeight: row.font_weight,
+    textAlign: row.text_align,
+    textColor: row.text_color,
+    imageUrl: row.image_url,
+    r2Key: row.r2_key,
+    r2Bucket: row.r2_bucket,
+    fileSize: row.file_size,
+    mimeType: row.mime_type,
+    aspectRatio: row.aspect_ratio,
+    startX: row.start_x,
+    startY: row.start_y,
+    endX: row.end_x,
+    endY: row.end_y,
+    createdBy: parseUser(row.created_by) || {},
+    createdAt: row.created_at,
+    lastEditedBy: parseUser(row.last_edited_by),
+    lastEditedAt: row.last_edited_at || undefined,
+    isLocked: Boolean(row.is_locked),
+    isHidden: Boolean(row.is_hidden),
+  };
+}

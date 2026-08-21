@@ -72,6 +72,7 @@ export default function App() {
 
   // Hidden file input ref for image upload tool
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const pendingUploadIds = React.useRef(new Set<string>());
 
   // 1. Initial Data Fetch from Cloudflare D1 API
   React.useEffect(() => {
@@ -80,7 +81,13 @@ export default function App() {
         const res = await fetch(`/api/board/${boardId}/nodes`);
         const data = await res.json();
         if (data.success && Array.isArray(data.nodes)) {
-          setNodes(data.nodes);
+          setNodes((prev) => {
+            const remoteNodeIds = new Set(data.nodes.map((node: CanvasNode) => node.id));
+            const localUploadPreviews = prev.filter(
+              (node) => pendingUploadIds.current.has(node.id) && !remoteNodeIds.has(node.id)
+            );
+            return [...data.nodes, ...localUploadPreviews];
+          });
           setHistory([data.nodes]);
           setHistoryIndex(0);
         }
@@ -396,6 +403,7 @@ export default function App() {
   // 4. Cloudflare R2 Image Upload Handler
   const handleUploadImageFile = async (file: File, worldX: number, worldY: number) => {
     const tempId = `node_image_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const localPreviewUrl = URL.createObjectURL(file);
     const tempNode: CanvasNode = {
       id: tempId,
       type: 'image',
@@ -412,14 +420,17 @@ export default function App() {
       borderRadius: 12,
       shadow: true,
       text: file.name,
-      imageUrl: URL.createObjectURL(file),
+      imageUrl: localPreviewUrl,
       r2Bucket: 'canvas-assets (上傳中...)',
       createdBy: currentUser,
       createdAt: Date.now(),
     };
 
-    // Optimistic insert
-    handleCreateNode(tempNode);
+    // Keep the blob URL in this window only. A blob URL cannot be rendered by
+    // other tabs, so it must never be sent to D1 or the collaboration channel.
+    pendingUploadIds.current.add(tempId);
+    setNodes((prev) => [...prev, tempNode]);
+    setSelectedNodeIds([tempId]);
 
     try {
       const formData = new FormData();
@@ -432,19 +443,43 @@ export default function App() {
       });
       const data = await res.json();
 
-      if (data.success) {
-        handleUpdateNode(tempId, {
-          imageUrl: data.url,
-          r2Key: data.key,
-          r2Bucket: data.bucket,
-          fileSize: data.size,
-          mimeType: data.mimeType,
-          strokeColor: '#3f3f46',
-          strokeWidth: 0,
-        });
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'R2 upload failed');
       }
+
+      const uploadedNode: CanvasNode = {
+        ...tempNode,
+        imageUrl: data.url,
+        r2Key: data.key,
+        r2Bucket: data.bucket,
+        fileSize: data.size,
+        mimeType: data.mimeType,
+        strokeColor: '#3f3f46',
+        strokeWidth: 0,
+      };
+
+      // Replace only the local preview, then publish a node that every client
+      // can fetch from R2 through the Pages storage endpoint.
+      setNodes((prev) => prev.map((node) => (node.id === tempId ? uploadedNode : node)));
+      pendingUploadIds.current.delete(tempId);
+      URL.revokeObjectURL(localPreviewUrl);
+
+      syncService.sendNodeCreate(uploadedNode);
+      await fetch(`/api/board/${boardId}/nodes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ node: uploadedNode }),
+      });
     } catch (err) {
       console.error('[Cloudflare R2 Upload Error]:', err);
+      pendingUploadIds.current.delete(tempId);
+      setNodes((prev) =>
+        prev.map((node) =>
+          node.id === tempId
+            ? { ...node, r2Bucket: 'canvas-assets (上傳失敗)', strokeColor: '#f43f5e' }
+            : node
+        )
+      );
     }
   };
 

@@ -30,7 +30,7 @@ class SyncService {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       this.broadcastChannel = new BroadcastChannel('cloudcanvas_sync_channel');
       this.broadcastChannel.onmessage = (event) => {
-        this.handleIncomingMessage(event.data, false);
+        this.handleIncomingMessage(event.data);
       };
     }
   }
@@ -79,7 +79,7 @@ class SyncService {
       this.ws.onmessage = (event) => {
         try {
           const msg: SyncMessage = JSON.parse(event.data);
-          this.handleIncomingMessage(msg, true);
+          this.handleIncomingMessage(msg);
         } catch (err) {
           console.error('[SyncService] Failed to parse message', err);
         }
@@ -132,11 +132,9 @@ class SyncService {
     }
   }
 
-  private handleIncomingMessage(msg: SyncMessage, fromWebSocket: boolean) {
-    // Ignore messages from self if they originate from broadcast channel
-    if (!fromWebSocket && this.currentUser && msg.sender?.id === this.currentUser.id) {
-      return;
-    }
+  private handleIncomingMessage(msg: SyncMessage) {
+    // BroadcastChannel does not dispatch a message back to the object that sent
+    // it. Do not filter by user id: two tabs often share the same signed-in user.
 
     switch (msg.type) {
       case 'cursor_move':
