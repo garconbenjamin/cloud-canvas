@@ -87,6 +87,18 @@ export default function App() {
   const [isDeployModalOpen, setIsDeployModalOpen] = React.useState(false);
   const [isLayersPanelOpen, setIsLayersPanelOpen] = React.useState(false);
 
+  const showReaction = React.useCallback((reaction: Omit<FloatingReaction, 'id' | 'timestamp'>) => {
+    const newReaction: FloatingReaction = {
+      id: `reaction_${Date.now()}_${Math.random()}`,
+      timestamp: Date.now(),
+      ...reaction,
+    };
+    setFloatingReactions((prev) => [...prev, newReaction]);
+    setTimeout(() => {
+      setFloatingReactions((prev) => prev.filter((item) => item.id !== newReaction.id));
+    }, 2500);
+  }, []);
+
   // Undo / Redo History Stack
   const [history, setHistory] = React.useState<CanvasNode[][]>([]);
   const [historyIndex, setHistoryIndex] = React.useState<number>(-1);
@@ -179,19 +191,12 @@ export default function App() {
     });
 
     const unsubReaction = syncService.onReaction((r) => {
-      const newReaction: FloatingReaction = {
-        id: `reaction_${Date.now()}_${Math.random()}`,
+      showReaction({
         emoji: r.emoji,
         sender: r.sender,
         x: r.x,
         y: r.y,
-        timestamp: Date.now(),
-      };
-      setFloatingReactions((prev) => [...prev, newReaction]);
-
-      setTimeout(() => {
-        setFloatingReactions((prev) => prev.filter((item) => item.id !== newReaction.id));
-      }, 2500);
+      });
     });
 
     return () => {
@@ -205,7 +210,7 @@ export default function App() {
       unsubReaction();
       syncService.disconnect();
     };
-  }, [boardId, currentUser]);
+  }, [boardId, currentUser, showReaction]);
 
   // Persist user changes to localStorage
   const handleSelectUser = React.useCallback((user: UserProfile) => {
@@ -822,6 +827,7 @@ export default function App() {
             onSendReaction={(emoji) => {
               const centerX = (-viewport.x + window.innerWidth / 2) / viewport.zoom;
               const centerY = (-viewport.y + window.innerHeight / 2) / viewport.zoom;
+              showReaction({ emoji, sender: currentUser, x: centerX, y: centerY });
               syncService.sendReaction(emoji, centerX, centerY);
             }}
             onAddPresetTemplate={handleAddPresetTemplate}

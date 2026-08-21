@@ -101,6 +101,19 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
     });
   };
 
+  const handleDimensionChange = (field: 'width' | 'height', value: number) => {
+    selectedNodes.forEach((node) => {
+      const updates: Partial<CanvasNode> = node.type === 'circle'
+        ? { width: value, height: value }
+        : { [field]: value };
+      onUpdateNode(node.id, {
+        ...updates,
+        lastEditedBy: currentUser,
+        lastEditedAt: Date.now(),
+      });
+    });
+  };
+
   const formatDate = (timestamp?: number) => {
     if (!timestamp) return '剛剛';
     const d = new Date(timestamp);
@@ -168,7 +181,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               type="number"
               min="10"
               value={Math.round(primaryNode.width)}
-              onChange={(e) => handlePropertyChange('width', Math.max(10, parseFloat(e.target.value) || 10))}
+              onChange={(e) => handleDimensionChange('width', Math.max(10, parseFloat(e.target.value) || 10))}
               className="w-full bg-transparent outline-none text-right text-neutral-200"
             />
           </div>
@@ -178,7 +191,7 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               type="number"
               min="10"
               value={Math.round(primaryNode.height)}
-              onChange={(e) => handlePropertyChange('height', Math.max(10, parseFloat(e.target.value) || 10))}
+              onChange={(e) => handleDimensionChange('height', Math.max(10, parseFloat(e.target.value) || 10))}
               className="w-full bg-transparent outline-none text-right text-neutral-200"
             />
           </div>

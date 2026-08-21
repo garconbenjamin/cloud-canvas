@@ -87,7 +87,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     initialY: number;
     initialWidth: number;
     initialHeight: number;
+    nodeType: NodeType;
   } | null>(null);
+
+  const [rotationInitial, setRotationInitial] = React.useState<{
+    nodeId: string;
+    centerX: number;
+    centerY: number;
+    startAngle: number;
+    initialRotation: number;
+  } | null>(null);
+  const [isNearRotationCorner, setIsNearRotationCorner] = React.useState(false);
 
   // Drag over state for file drop visual feedback
   const [isDragOverFile, setIsDragOverFile] = React.useState(false);
@@ -105,6 +115,27 @@ export const Canvas: React.FC<CanvasProps> = ({
     },
     [viewport]
   );
+
+  const getRotationNodeAtPoint = React.useCallback((screenX: number, screenY: number) => {
+    if (selectedNodeIds.length !== 1) return null;
+    const node = nodes.find((item) => item.id === selectedNodeIds[0]);
+    if (!node || node.isLocked || node.isHidden) return null;
+
+    const centerX = (node.x + node.width / 2) * viewport.zoom + viewport.x;
+    const centerY = (node.y + node.height / 2) * viewport.zoom + viewport.y;
+    const radians = (node.rotation || 0) * (Math.PI / 180);
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+
+    for (const [horizontal, vertical] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const localX = horizontal * node.width * viewport.zoom / 2;
+      const localY = vertical * node.height * viewport.zoom / 2;
+      const cornerX = centerX + localX * cos - localY * sin;
+      const cornerY = centerY + localX * sin + localY * cos;
+      if (Math.hypot(screenX - cornerX, screenY - cornerY) <= 22) return node;
+    }
+    return null;
+  }, [nodes, selectedNodeIds, viewport]);
 
   // Listen to global keyboard shortcuts
   React.useEffect(() => {
@@ -139,6 +170,10 @@ export const Canvas: React.FC<CanvasProps> = ({
 
       // Broadcast cursor position to peers
       onSendCursor(world, selectedNodeIds, isDraggingNodes);
+
+      if (!isPanning && !marquee && !activeResizeHandle && !rotationInitial && !isDraggingNodes) {
+        setIsNearRotationCorner(Boolean(getRotationNodeAtPoint(e.clientX, e.clientY)));
+      }
 
       // 1. Handling Viewport Panning
       if (isPanning) {
@@ -202,6 +237,22 @@ export const Canvas: React.FC<CanvasProps> = ({
           }
         }
 
+        // Circles always retain a 1:1 aspect ratio, including side-handle resizing.
+        if (resizeInitial.nodeType === 'circle') {
+          const initialSize = Math.max(resizeInitial.initialWidth, resizeInitial.initialHeight);
+          const horizontalDelta = activeResizeHandle.includes('e') ? dx : activeResizeHandle.includes('w') ? -dx : 0;
+          const verticalDelta = activeResizeHandle.includes('s') ? dy : activeResizeHandle.includes('n') ? -dy : 0;
+          const sizeDelta = activeResizeHandle.length === 2
+            ? Math.max(horizontalDelta, verticalDelta)
+            : horizontalDelta || verticalDelta;
+          const newSize = Math.max(20, initialSize + sizeDelta);
+
+          newWidth = newSize;
+          newHeight = newSize;
+          if (activeResizeHandle.includes('w')) newX = resizeInitial.initialX + initialSize - newSize;
+          if (activeResizeHandle.includes('n')) newY = resizeInitial.initialY + initialSize - newSize;
+        }
+
         const updated = nodes.map((n) =>
           n.id === resizeInitial.nodeId
             ? { ...n, x: newX, y: newY, width: newWidth, height: newHeight }
@@ -216,7 +267,23 @@ export const Canvas: React.FC<CanvasProps> = ({
         return;
       }
 
-      // 4. Handling Node Dragging (Multi-node support)
+      // 4. Handling Node Rotation
+      if (rotationInitial) {
+        const angle = Math.atan2(world.y - rotationInitial.centerY, world.x - rotationInitial.centerX) * (180 / Math.PI);
+        const rotation = rotationInitial.initialRotation + angle - rotationInitial.startAngle;
+        const updatedNode = nodes.find((node) => node.id === rotationInitial.nodeId);
+        if (!updatedNode) return;
+
+        const nextNode = { ...updatedNode, rotation };
+        if (onLocalTransformNodes) {
+          onLocalTransformNodes([nextNode]);
+        } else {
+          onUpdateNode(rotationInitial.nodeId, { rotation });
+        }
+        return;
+      }
+
+      // 5. Handling Node Dragging (Multi-node support)
       if (isDraggingNodes) {
         const dx = world.x - dragStartPos.x;
         const dy = world.y - dragStartPos.y;
@@ -258,6 +325,13 @@ export const Canvas: React.FC<CanvasProps> = ({
         setActiveResizeHandle(null);
         setResizeInitial(null);
       }
+      if (rotationInitial) {
+        const rotatedNode = nodes.find((node) => node.id === rotationInitial.nodeId);
+        if (rotatedNode && onCommitTransformNodes) {
+          onCommitTransformNodes([rotatedNode]);
+        }
+        setRotationInitial(null);
+      }
       if (isDraggingNodes) {
         setIsDraggingNodes(false);
         const draggedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
@@ -281,6 +355,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     marquee,
     activeResizeHandle,
     resizeInitial,
+    rotationInitial,
     isDraggingNodes,
     dragStartPos,
     initialNodePositions,
@@ -294,6 +369,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     onUpdateNode,
     onBatchUpdateNodes,
     onViewportChange,
+    getRotationNodeAtPoint,
   ]);
 
   // Wheel zoom / trackpad pan
@@ -335,6 +411,12 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
 
     if (e.button !== 0) return; // Only left click
+
+    const rotationNode = getRotationNodeAtPoint(e.clientX, e.clientY);
+    if (rotationNode) {
+      handleRotationStart(e, rotationNode);
+      return;
+    }
 
     const world = screenToWorld(e.clientX, e.clientY);
 
@@ -407,6 +489,21 @@ export const Canvas: React.FC<CanvasProps> = ({
       initialY: node.y,
       initialWidth: node.width,
       initialHeight: node.height,
+      nodeType: node.type,
+    });
+  };
+
+  const handleRotationStart = (e: React.MouseEvent, node: CanvasNode) => {
+    e.stopPropagation();
+    const world = screenToWorld(e.clientX, e.clientY);
+    const centerX = node.x + node.width / 2;
+    const centerY = node.y + node.height / 2;
+    setRotationInitial({
+      nodeId: node.id,
+      centerX,
+      centerY,
+      startAngle: Math.atan2(world.y - centerY, world.x - centerX) * (180 / Math.PI),
+      initialRotation: node.rotation || 0,
     });
   };
 
@@ -673,6 +770,22 @@ export const Canvas: React.FC<CanvasProps> = ({
         {/* 8-Point Resize Handles for Selected Single Node */}
         {isSelected && selectedNodeIds.length === 1 && !node.isLocked && (
           <div className="absolute inset-0 pointer-events-none z-50">
+            {/* Visible rotation controls at each corner. */}
+            {([
+              '-top-5 -left-5',
+              '-top-5 -right-5',
+              '-bottom-5 -right-5',
+              '-bottom-5 -left-5',
+            ] as const).map((position) => (
+              <button
+                key={position}
+                type="button"
+                aria-label="旋轉物件"
+                title="拖曳以旋轉"
+                onMouseDown={(e) => handleRotationStart(e, node)}
+                className={`absolute ${position} w-3.5 h-3.5 rounded-full border border-indigo-200 bg-indigo-600 shadow cursor-grab active:cursor-grabbing pointer-events-auto hover:scale-125 transition-transform`}
+              />
+            ))}
             {/* NW: Top-Left */}
             <div
               onMouseDown={(e) => handleResizeStart(e, 'nw', node)}
@@ -733,6 +846,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      style={{ cursor: isNearRotationCorner ? 'alias' : undefined }}
       className={`relative w-full h-full overflow-hidden bg-neutral-950 select-none ${
         isPanning || isSpacePressed || currentTool === 'hand'
           ? 'cursor-grab active:cursor-grabbing'
