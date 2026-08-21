@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { CanvasNode } from '../../types.ts';
 
 interface ArrowNodeProps {

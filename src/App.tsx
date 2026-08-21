@@ -1,21 +1,22 @@
 import React from 'react';
-import {
-  CanvasNode,
-  ToolMode,
-  Viewport,
-  UserProfile,
-  UserPresence,
-  CloudflareStatus,
-} from './types.ts';
-import { syncService } from './lib/syncService.ts';
+
 import { Canvas } from './components/Canvas.tsx';
-import { TopNavbar } from './components/TopNavbar.tsx';
-import { Toolbar } from './components/Toolbar.tsx';
-import { PropertyPanel } from './components/PropertyPanel.tsx';
+import { CloudflareDeployModal } from './components/CloudflareDeployModal.tsx';
+import { GoogleAuthModal } from './components/GoogleAuthModal.tsx';
 import { LayersPanel } from './components/LayersPanel.tsx';
 import { Minimap } from './components/Minimap.tsx';
-import { GoogleAuthModal } from './components/GoogleAuthModal.tsx';
-import { CloudflareDeployModal } from './components/CloudflareDeployModal.tsx';
+import { PropertyPanel } from './components/PropertyPanel.tsx';
+import { Toolbar } from './components/Toolbar.tsx';
+import { TopNavbar } from './components/TopNavbar.tsx';
+import { syncService } from './lib/syncService.ts';
+import {
+  CanvasNode,
+  CloudflareStatus,
+  ToolMode,
+  UserPresence,
+  UserProfile,
+  Viewport,
+} from './types.ts';
 
 const GUEST_USER: UserProfile = {
   id: 'guest',
@@ -44,27 +45,67 @@ const HomeScreen: React.FC<{
   const [boards, setBoards] = React.useState<Array<{ id: string; title: string }>>([]);
   React.useEffect(() => {
     if (!isAuthenticated) return;
-    fetch(`/api/boards?ownerId=${encodeURIComponent(ownerId)}`).then((res) => res.json()).then((data) => setBoards(data.boards || [])).catch(() => {});
+    fetch(`/api/boards?ownerId=${encodeURIComponent(ownerId)}`)
+      .then((res) => res.json())
+      .then((data) => setBoards(data.boards || []))
+      .catch(() => {});
   }, [isAuthenticated, ownerId]);
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex items-center justify-center p-6">
       <div className="w-full max-w-xl rounded-3xl border border-neutral-800 bg-neutral-900/90 p-8 shadow-2xl">
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl">✦</div>
+          <div className="mx-auto mb-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl">
+            ✦
+          </div>
           <h1 className="text-2xl font-bold">CloudCanvas</h1>
           <p className="mt-2 text-sm text-neutral-400">多人協作無限畫布</p>
         </div>
         {!isAuthenticated ? (
-          <button onClick={onLogin} className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 font-semibold">使用 Google 登入後開始</button>
+          <button
+            onClick={onLogin}
+            className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 font-semibold"
+          >
+            使用 Google 登入後開始
+          </button>
         ) : (
           <div className="space-y-4">
-            <button onClick={onCreate} className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 font-semibold">新增畫布</button>
+            <button
+              onClick={onCreate}
+              className="w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 font-semibold"
+            >
+              新增畫布
+            </button>
             {error && <p className="text-xs text-rose-400">{error}</p>}
             <div className="flex gap-2">
-              <input value={boardId} onChange={(e) => setBoardId(e.target.value)} placeholder="輸入畫布 UUID" className="flex-1 rounded-xl bg-neutral-950 border border-neutral-700 px-3 py-2 outline-none focus:border-indigo-500" />
-              <button disabled={!boardId.trim()} onClick={() => onOpen(boardId.trim())} className="rounded-xl border border-neutral-700 px-4 disabled:opacity-40">載入畫布</button>
+              <input
+                value={boardId}
+                onChange={(e) => setBoardId(e.target.value)}
+                placeholder="輸入畫布 UUID"
+                className="flex-1 rounded-xl bg-neutral-950 border border-neutral-700 px-3 py-2 outline-none focus:border-indigo-500"
+              />
+              <button
+                disabled={!boardId.trim()}
+                onClick={() => onOpen(boardId.trim())}
+                className="rounded-xl border border-neutral-700 px-4 disabled:opacity-40"
+              >
+                載入畫布
+              </button>
             </div>
-            {boards.length > 0 && <div className="space-y-2"><p className="text-xs text-neutral-400">我的舊畫布</p>{boards.map((board) => <button key={board.id} onClick={() => onOpen(board.id)} className="w-full text-left rounded-xl border border-neutral-800 px-3 py-2 hover:bg-neutral-800"><span className="text-sm">{board.title}</span><span className="block text-[11px] text-neutral-500">{board.id}</span></button>)}</div>}
+            {boards.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-neutral-400">我的舊畫布</p>
+                {boards.map((board) => (
+                  <button
+                    key={board.id}
+                    onClick={() => onOpen(board.id)}
+                    className="w-full text-left rounded-xl border border-neutral-800 px-3 py-2 hover:bg-neutral-800"
+                  >
+                    <span className="text-sm">{board.title}</span>
+                    <span className="block text-[11px] text-neutral-500">{board.id}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <p className="text-xs text-neutral-500">可透過分享連結或 6 碼畫布 ID 開啟他人畫布。</p>
           </div>
         )}
@@ -153,13 +194,14 @@ export default function App() {
         const res = await fetch(`/api/board/${boardId}/nodes`);
         const data = await res.json();
         if (data.success && Array.isArray(data.nodes)) {
-          const loadedNodes = boardId === 'default'
-            ? data.nodes.filter((node: CanvasNode) => !LEGACY_DEFAULT_NODE_IDS.has(node.id))
-            : data.nodes;
+          const loadedNodes =
+            boardId === 'default'
+              ? data.nodes.filter((node: CanvasNode) => !LEGACY_DEFAULT_NODE_IDS.has(node.id))
+              : data.nodes;
           setNodes((prev) => {
             const remoteNodeIds = new Set(loadedNodes.map((node: CanvasNode) => node.id));
             const localUploadPreviews = prev.filter(
-              (node) => pendingUploadIds.current.has(node.id) && !remoteNodeIds.has(node.id)
+              (node) => pendingUploadIds.current.has(node.id) && !remoteNodeIds.has(node.id),
             );
             return [...loadedNodes, ...localUploadPreviews];
           });
@@ -189,7 +231,7 @@ export default function App() {
   React.useEffect(() => {
     if (!routeBoardId) return;
     fetch(`/api/board/${routeBoardId}`)
-      .then((res) => res.ok ? res.json() : null)
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.success) {
           setBoardTitle(data.board.title);
@@ -310,7 +352,7 @@ export default function App() {
             lastEditedBy: currentUser,
             lastEditedAt: Date.now(),
           }
-        : n
+        : n,
     );
     setNodes(updated);
 
@@ -442,7 +484,7 @@ export default function App() {
     if (selectedNodeIds.length === 0) return;
     const maxZ = Math.max(...nodes.map((n) => n.zIndex || 1), 1);
     const updated = nodes.map((n) =>
-      selectedNodeIds.includes(n.id) ? { ...n, zIndex: maxZ + 1 } : n
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: maxZ + 1 } : n,
     );
     handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
   };
@@ -451,7 +493,7 @@ export default function App() {
     if (selectedNodeIds.length === 0) return;
     const minZ = Math.min(...nodes.map((n) => n.zIndex || 1), 1);
     const updated = nodes.map((n) =>
-      selectedNodeIds.includes(n.id) ? { ...n, zIndex: Math.max(0, minZ - 1) } : n
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: Math.max(0, minZ - 1) } : n,
     );
     handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
   };
@@ -459,7 +501,7 @@ export default function App() {
   const handleBringForward = () => {
     if (selectedNodeIds.length === 0) return;
     const updated = nodes.map((n) =>
-      selectedNodeIds.includes(n.id) ? { ...n, zIndex: (n.zIndex || 1) + 1 } : n
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: (n.zIndex || 1) + 1 } : n,
     );
     handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
   };
@@ -467,7 +509,7 @@ export default function App() {
   const handleSendBackward = () => {
     if (selectedNodeIds.length === 0) return;
     const updated = nodes.map((n) =>
-      selectedNodeIds.includes(n.id) ? { ...n, zIndex: Math.max(0, (n.zIndex || 1) - 1) } : n
+      selectedNodeIds.includes(n.id) ? { ...n, zIndex: Math.max(0, (n.zIndex || 1) - 1) } : n,
     );
     handleBatchUpdateNodes(updated.filter((n) => selectedNodeIds.includes(n.id)));
   };
@@ -549,8 +591,8 @@ export default function App() {
         prev.map((node) =>
           node.id === tempId
             ? { ...node, r2Bucket: 'canvas-assets (上傳失敗)', strokeColor: '#f43f5e' }
-            : node
-        )
+            : node,
+        ),
       );
     }
   };
@@ -594,7 +636,10 @@ export default function App() {
       setViewport({ x: 100, y: 100, zoom: 1 });
       return;
     }
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
     nodes.forEach((n) => {
       minX = Math.min(minX, n.x);
       minY = Math.min(minY, n.y);
@@ -698,7 +743,10 @@ export default function App() {
   const selectedNodes = nodes.filter((n) => selectedNodeIds.includes(n.id));
 
   return (
-    <div id="cloudcanvas-app-root" className="h-screen w-screen flex flex-col bg-neutral-950 text-neutral-100 overflow-hidden font-sans">
+    <div
+      id="cloudcanvas-app-root"
+      className="h-screen w-screen flex flex-col bg-neutral-950 text-neutral-100 overflow-hidden font-sans"
+    >
       {/* Hidden File Input for Image Upload */}
       <input
         ref={fileInputRef}
@@ -720,7 +768,9 @@ export default function App() {
         boardTitle={boardTitle}
         onUpdateBoardTitle={handleUpdateBoardTitle}
         canEditBoardTitle={currentUser.id === boardOwnerId}
-        boardOwnerName={currentUser.id === boardOwnerId ? currentUser.name : boardOwnerId || '未知使用者'}
+        boardOwnerName={
+          currentUser.id === boardOwnerId ? currentUser.name : boardOwnerId || '未知使用者'
+        }
         onlineUsers={onlinePresences}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
@@ -739,7 +789,7 @@ export default function App() {
           onSelectNode={(nodeId, isShift) => {
             if (isShift) {
               setSelectedNodeIds((prev) =>
-                prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId]
+                prev.includes(nodeId) ? prev.filter((id) => id !== nodeId) : [...prev, nodeId],
               );
             } else {
               setSelectedNodeIds([nodeId]);
@@ -809,7 +859,7 @@ export default function App() {
         </main>
 
         {/* Right: Property Inspector Sidebar */}
-          <PropertyPanel
+        <PropertyPanel
           selectedNodes={selectedNodes}
           onUpdateNode={handleUpdateNode}
           onDeleteSelected={() => handleDeleteNodes(selectedNodeIds)}

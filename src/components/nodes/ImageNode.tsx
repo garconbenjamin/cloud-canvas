@@ -1,6 +1,7 @@
-import React from 'react';
-import { CanvasNode } from '../../types.ts';
 import { Cloud, Image as ImageIcon, Loader2 } from 'lucide-react';
+import React from 'react';
+
+import { CanvasNode } from '../../types.ts';
 
 interface ImageNodeProps {
   node: CanvasNode;
@@ -36,7 +37,9 @@ export const ImageNode: React.FC<ImageNodeProps> = ({ node, isSelected }) => {
         <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-neutral-900/90 text-neutral-400 gap-2 text-center">
           <ImageIcon className="w-8 h-8 text-rose-400" />
           <span className="text-xs font-medium text-rose-300">圖片載入失敗</span>
-          <span className="text-[10px] text-neutral-500 truncate max-w-[180px]">{node.imageUrl}</span>
+          <span className="text-[10px] text-neutral-500 truncate max-w-[180px]">
+            {node.imageUrl}
+          </span>
         </div>
       ) : (
         <img

@@ -1,20 +1,21 @@
-import React from 'react';
-import { CloudflareStatus } from '../types.ts';
 import {
-  Cloud,
-  Database,
-  GitBranch,
-  Terminal,
-  FileCode,
-  CheckCircle2,
-  Copy,
   Check,
+  CheckCircle2,
+  Cloud,
+  Copy,
+  Database,
   Download,
   ExternalLink,
-  Shield,
+  FileCode,
+  GitBranch,
   Layers,
+  Shield,
   Sparkles,
+  Terminal,
 } from 'lucide-react';
+import React from 'react';
+
+import { CloudflareStatus } from '../types.ts';
 
 interface CloudflareDeployModalProps {
   isOpen: boolean;
@@ -27,7 +28,9 @@ export const CloudflareDeployModal: React.FC<CloudflareDeployModalProps> = ({
   onClose,
   status,
 }) => {
-  const [activeTab, setActiveTab] = React.useState<'guide' | 'schema' | 'wrangler' | 'worker'>('guide');
+  const [activeTab, setActiveTab] = React.useState<'guide' | 'schema' | 'wrangler' | 'worker'>(
+    'guide',
+  );
   const [copiedKey, setCopiedKey] = React.useState<string | null>(null);
   const [schemaSql, setSchemaSql] = React.useState<string>('');
   const [wranglerToml, setWranglerToml] = React.useState<string>('');
@@ -223,22 +226,28 @@ export const CloudflareDeployModal: React.FC<CloudflareDeployModalProps> = ({
               {/* Step 1 */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-sm">步驟 1：建立 Public Git Repo 並推上 GitHub</span>
+                  <span className="font-bold text-white text-sm">
+                    步驟 1：建立 Public Git Repo 並推上 GitHub
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 relative group">
                   <button
                     onClick={() =>
                       copyToClipboard(
                         'git init\ngit add .\ngit commit -m "feat: initial CloudCanvas commit"\ngit branch -M main\ngit remote add origin https://github.com/YOUR_USER/cloudcanvas.git\ngit push -u origin main',
-                        'git-cmd'
+                        'git-cmd',
                       )
                     }
                     className="absolute top-2 right-2 p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                   >
-                    {copiedKey === 'git-cmd' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === 'git-cmd' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                   </button>
                   <pre className="overflow-x-auto text-[11px]">
-{`git init
+                    {`git init
 git add .
 git commit -m "feat: initial CloudCanvas commit"
 git branch -M main
@@ -251,22 +260,28 @@ git push -u origin main`}
               {/* Step 2 */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-sm">步驟 2：在 Cloudflare 建立 D1 資料庫與執行 Migration</span>
+                  <span className="font-bold text-white text-sm">
+                    步驟 2：在 Cloudflare 建立 D1 資料庫與執行 Migration
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 relative group">
                   <button
                     onClick={() =>
                       copyToClipboard(
                         'pnpm dlx wrangler d1 create canvas-d1-prod\n# 執行 SQL 建立資料表\npnpm dlx wrangler d1 execute canvas-d1-prod --file=./schema.sql',
-                        'd1-cmd'
+                        'd1-cmd',
                       )
                     }
                     className="absolute top-2 right-2 p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                   >
-                    {copiedKey === 'd1-cmd' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === 'd1-cmd' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                   </button>
                   <pre className="overflow-x-auto text-[11px]">
-{`# 建立 D1 資料庫
+                    {`# 建立 D1 資料庫
 pnpm dlx wrangler d1 create canvas-d1-prod
 
 # 匯入 schema.sql (點選上方分頁可直接下載或複製)
@@ -278,7 +293,9 @@ pnpm dlx wrangler d1 execute canvas-d1-prod --file=./schema.sql`}
               {/* Step 3 */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-white text-sm">步驟 3：建立 Cloudflare R2 存儲桶</span>
+                  <span className="font-bold text-white text-sm">
+                    步驟 3：建立 Cloudflare R2 存儲桶
+                  </span>
                 </div>
                 <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 relative group">
                   <button
@@ -287,10 +304,14 @@ pnpm dlx wrangler d1 execute canvas-d1-prod --file=./schema.sql`}
                     }
                     className="absolute top-2 right-2 p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                   >
-                    {copiedKey === 'r2-cmd' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === 'r2-cmd' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                   </button>
                   <pre className="overflow-x-auto text-[11px]">
-{`# 建立 R2 Bucket 存放拖曳上傳之圖檔
+                    {`# 建立 R2 Bucket 存放拖曳上傳之圖檔
 pnpm dlx wrangler r2 bucket create canvas-assets`}
                   </pre>
                 </div>
@@ -298,13 +319,24 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
 
               {/* Step 4 */}
               <div className="space-y-2">
-                <span className="font-bold text-white text-sm">步驟 4：至 Cloudflare Pages 綁定 D1 與 R2</span>
+                <span className="font-bold text-white text-sm">
+                  步驟 4：至 Cloudflare Pages 綁定 D1 與 R2
+                </span>
                 <p className="text-neutral-400">
-                  登入 Cloudflare 後台，在 Pages 專案的 <strong>Settings &gt; Functions</strong> 中綁定：
+                  登入 Cloudflare 後台，在 Pages 專案的 <strong>Settings &gt; Functions</strong>{' '}
+                  中綁定：
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-neutral-300 ml-2">
-                  <li><strong>D1 database bindings:</strong> 變數名稱設為 <code className="text-indigo-400">DB</code>，綁定至 <code className="text-neutral-200">canvas-d1-prod</code></li>
-                  <li><strong>R2 bucket bindings:</strong> 變數名稱設為 <code className="text-orange-400">R2_BUCKET</code>，綁定至 <code className="text-neutral-200">canvas-assets</code></li>
+                  <li>
+                    <strong>D1 database bindings:</strong> 變數名稱設為{' '}
+                    <code className="text-indigo-400">DB</code>，綁定至{' '}
+                    <code className="text-neutral-200">canvas-d1-prod</code>
+                  </li>
+                  <li>
+                    <strong>R2 bucket bindings:</strong> 變數名稱設為{' '}
+                    <code className="text-orange-400">R2_BUCKET</code>，綁定至{' '}
+                    <code className="text-neutral-200">canvas-assets</code>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -313,13 +345,19 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
           {activeTab === 'schema' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-white">Cloudflare D1 SQL 建表與當前節點資料 Dump</span>
+                <span className="font-semibold text-white">
+                  Cloudflare D1 SQL 建表與當前節點資料 Dump
+                </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => copyToClipboard(schemaSql, 'schema')}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
                   >
-                    {copiedKey === 'schema' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === 'schema' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                     複製 SQL
                   </button>
                   <button
@@ -332,7 +370,9 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 max-h-96 overflow-y-auto">
-                <pre className="text-[11px] whitespace-pre-wrap">{schemaSql || '載入 D1 Schema 中...'}</pre>
+                <pre className="text-[11px] whitespace-pre-wrap">
+                  {schemaSql || '載入 D1 Schema 中...'}
+                </pre>
               </div>
             </div>
           )}
@@ -346,7 +386,11 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
                     onClick={() => copyToClipboard(wranglerToml, 'wrangler')}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
                   >
-                    {copiedKey === 'wrangler' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === 'wrangler' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                     複製設定
                   </button>
                   <button
@@ -359,7 +403,9 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 max-h-96 overflow-y-auto">
-                <pre className="text-[11px] whitespace-pre-wrap">{wranglerToml || '載入 wrangler.toml 中...'}</pre>
+                <pre className="text-[11px] whitespace-pre-wrap">
+                  {wranglerToml || '載入 wrangler.toml 中...'}
+                </pre>
               </div>
             </div>
           )}
@@ -367,13 +413,19 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
           {activeTab === 'worker' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-white">Cloudflare Worker / Pages Edge API 程式碼 (worker.ts)</span>
+                <span className="font-semibold text-white">
+                  Cloudflare Worker / Pages Edge API 程式碼 (worker.ts)
+                </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => copyToClipboard(workerTs, 'worker')}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white transition-colors"
                   >
-                    {copiedKey === 'worker' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedKey === 'worker' ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
                     複製程式碼
                   </button>
                   <button
@@ -386,7 +438,9 @@ pnpm dlx wrangler r2 bucket create canvas-assets`}
                 </div>
               </div>
               <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 font-mono text-neutral-300 max-h-96 overflow-y-auto">
-                <pre className="text-[11px] whitespace-pre-wrap">{workerTs || '載入 worker.ts 中...'}</pre>
+                <pre className="text-[11px] whitespace-pre-wrap">
+                  {workerTs || '載入 worker.ts 中...'}
+                </pre>
               </div>
             </div>
           )}

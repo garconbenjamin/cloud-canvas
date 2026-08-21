@@ -1,7 +1,8 @@
-import React from 'react';
-import { UserProfile } from '../types.ts';
-import { DEMO_USERS } from '../lib/constants.ts';
 import { Check, LogOut } from 'lucide-react';
+import React from 'react';
+
+import { DEMO_USERS } from '../lib/constants.ts';
+import { UserProfile } from '../types.ts';
 
 interface GoogleCredentialResponse {
   credential?: string;
@@ -80,10 +81,11 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
               const normalized = encodedPayload.replace(/-/g, '+').replace(/_/g, '/');
               const payload = JSON.parse(
                 decodeURIComponent(
-                  Array.from(atob(normalized), (char) =>
-                    `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`
-                  ).join('')
-                )
+                  Array.from(
+                    atob(normalized),
+                    (char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`,
+                  ).join(''),
+                ),
               ) as GoogleIdPayload;
 
               if (!payload.sub || !payload.email || payload.exp * 1000 <= Date.now()) {
@@ -94,7 +96,9 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
                 id: `google_${payload.sub}`,
                 name: payload.name || payload.email.split('@')[0],
                 email: payload.email,
-                avatar: payload.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.email)}`,
+                avatar:
+                  payload.picture ||
+                  `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.email)}`,
                 color: customColor,
               });
               setAuthError('');
@@ -227,86 +231,94 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
           </div>
         ) : (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
-            尚未設定 Google OAuth Client ID。請設定 <code>GOOGLE_CLIENT_ID</code>（本機亦可使用 <code>VITE_GOOGLE_CLIENT_ID</code>）。
+            尚未設定 Google OAuth Client ID。請設定 <code>GOOGLE_CLIENT_ID</code>（本機亦可使用{' '}
+            <code>VITE_GOOGLE_CLIENT_ID</code>）。
           </div>
         )}
 
         {/* Quick Multi-user / Persona Switcher */}
-        {!googleOnly && import.meta.env.DEV && <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-neutral-400">
-            <span className="font-semibold">快速切換測試身份（測試多人同步）</span>
-            <span className="text-[11px] text-indigo-400">一鍵切換游標</span>
-          </div>
+        {!googleOnly && import.meta.env.DEV && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-neutral-400">
+              <span className="font-semibold">快速切換測試身份（測試多人同步）</span>
+              <span className="text-[11px] text-indigo-400">一鍵切換游標</span>
+            </div>
 
-          <div className="grid grid-cols-1 gap-2">
-            {DEMO_USERS.map((user) => {
-              const isSelected = currentUser.id === user.id;
-              return (
-                <button
-                  key={user.id}
-                  onClick={() => {
-                    onSelectUser(user);
-                    onClose();
-                  }}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
-                    isSelected
-                      ? 'bg-indigo-600/20 border-indigo-500/50 text-white'
-                      : 'bg-neutral-950/40 border-neutral-800 hover:bg-neutral-800/80 text-neutral-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={user.avatar}
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full object-cover border"
-                      style={{ borderColor: user.color }}
-                    />
-                    <div>
-                      <div className="font-medium text-xs text-white">{user.name}</div>
-                      <div className="text-[11px] text-neutral-400">{user.email}</div>
+            <div className="grid grid-cols-1 gap-2">
+              {DEMO_USERS.map((user) => {
+                const isSelected = currentUser.id === user.id;
+                return (
+                  <button
+                    key={user.id}
+                    onClick={() => {
+                      onSelectUser(user);
+                      onClose();
+                    }}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
+                      isSelected
+                        ? 'bg-indigo-600/20 border-indigo-500/50 text-white'
+                        : 'bg-neutral-950/40 border-neutral-800 hover:bg-neutral-800/80 text-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full object-cover border"
+                        style={{ borderColor: user.color }}
+                      />
+                      <div>
+                        <div className="font-medium text-xs text-white">{user.name}</div>
+                        <div className="text-[11px] text-neutral-400">{user.email}</div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-3 h-3 rounded-full border border-white/20"
-                      style={{ backgroundColor: user.color }}
-                    />
-                    {isSelected && <Check className="w-4 h-4 text-indigo-400" />}
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full border border-white/20"
+                        style={{ backgroundColor: user.color }}
+                      />
+                      {isSelected && <Check className="w-4 h-4 text-indigo-400" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>}
+        )}
 
         {/* Custom Persona / Google Email input */}
-        {!googleOnly && import.meta.env.DEV && <form onSubmit={handleCreateCustom} className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs">
-          <span className="font-semibold text-neutral-400">或自訂 Google 協作者名稱</span>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="名稱 (例如: Kevin Google)"
-              value={customName}
-              onChange={(e) => setCustomName(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-xl bg-neutral-950/60 border border-neutral-800 outline-none focus:border-indigo-500 text-neutral-200 text-xs"
-            />
-            <input
-              type="color"
-              value={customColor}
-              onChange={(e) => setCustomColor(e.target.value)}
-              className="w-9 h-9 rounded-xl cursor-pointer border border-neutral-700 bg-transparent p-0"
-              title="選擇畫布游標顏色"
-            />
-            <button
-              type="submit"
-              disabled={!customName.trim()}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-xs transition-colors"
-            >
-              切換
-            </button>
-          </div>
-        </form>}
+        {!googleOnly && import.meta.env.DEV && (
+          <form
+            onSubmit={handleCreateCustom}
+            className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs"
+          >
+            <span className="font-semibold text-neutral-400">或自訂 Google 協作者名稱</span>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="名稱 (例如: Kevin Google)"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-xl bg-neutral-950/60 border border-neutral-800 outline-none focus:border-indigo-500 text-neutral-200 text-xs"
+              />
+              <input
+                type="color"
+                value={customColor}
+                onChange={(e) => setCustomColor(e.target.value)}
+                className="w-9 h-9 rounded-xl cursor-pointer border border-neutral-700 bg-transparent p-0"
+                title="選擇畫布游標顏色"
+              />
+              <button
+                type="submit"
+                disabled={!customName.trim()}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium text-xs transition-colors"
+              >
+                切換
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

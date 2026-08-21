@@ -9,15 +9,15 @@
     "bindings": [
       {
         "name": "BOARD_SYNC",
-        "class_name": "BoardSync"
-      }
-    ]
+        "class_name": "BoardSync",
+      },
+    ],
   },
 
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["BoardSync"]
-    }
-  ]
+      "new_sqlite_classes": ["BoardSync"],
+    },
+  ],
 }

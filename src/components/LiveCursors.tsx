@@ -1,7 +1,8 @@
-import React from 'react';
-import { UserPresence, Viewport } from '../types.ts';
-import { motion, AnimatePresence } from 'motion/react';
 import { MousePointer } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import React from 'react';
+
+import { UserPresence, Viewport } from '../types.ts';
 
 interface LiveCursorsProps {
   presences: UserPresence[];
@@ -9,14 +10,10 @@ interface LiveCursorsProps {
   viewport: Viewport;
 }
 
-export const LiveCursors: React.FC<LiveCursorsProps> = ({
-  presences,
-  currentUserId,
-  viewport,
-}) => {
+export const LiveCursors: React.FC<LiveCursorsProps> = ({ presences, currentUserId, viewport }) => {
   // Filter out current user and users without active cursor
   const activeRemoteUsers = presences.filter(
-    (u) => u.id !== currentUserId && u.cursor !== null && Date.now() - u.lastActive < 30000
+    (u) => u.id !== currentUserId && u.cursor !== null && Date.now() - u.lastActive < 30000,
   );
 
   return (

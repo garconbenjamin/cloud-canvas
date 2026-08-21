@@ -1,6 +1,7 @@
 export type NodeType = 'rectangle' | 'circle' | 'text' | 'image' | 'sticky' | 'arrow';
 
-export type ToolMode = 'select' | 'hand' | 'rectangle' | 'circle' | 'text' | 'image' | 'sticky' | 'arrow';
+export type ToolMode =
+  'select' | 'hand' | 'rectangle' | 'circle' | 'text' | 'image' | 'sticky' | 'arrow';
 
 export interface UserProfile {
   id: string;
@@ -19,7 +20,7 @@ export interface CanvasNode {
   height: number;
   rotation: number;
   zIndex: number;
-  
+
   // Style properties
   fillColor: string;
   strokeColor: string;
@@ -27,7 +28,7 @@ export interface CanvasNode {
   opacity: number;
   borderRadius: number;
   shadow: boolean;
-  
+
   // Text specific properties
   text?: string;
   fontSize?: number;
@@ -35,7 +36,7 @@ export interface CanvasNode {
   fontWeight?: 'normal' | 'bold' | '500' | '600' | '700';
   textAlign?: 'left' | 'center' | 'right';
   textColor?: string;
-  
+
   // Image / Cloudflare R2 specific properties
   imageUrl?: string;
   r2Key?: string;
@@ -43,13 +44,13 @@ export interface CanvasNode {
   fileSize?: number;
   mimeType?: string;
   aspectRatio?: number;
-  
+
   // Arrow specific properties
   startX?: number;
   startY?: number;
   endX?: number;
   endY?: number;
-  
+
   // Metadata & Multi-user attribution
   createdBy: UserProfile;
   createdAt: number;
@@ -85,17 +86,17 @@ export interface UserPresence {
 }
 
 export interface SyncMessage {
-  type: 
-    | 'join' 
-    | 'leave' 
-    | 'cursor_move' 
-    | 'node_create' 
-    | 'node_update' 
-    | 'node_batch_update' 
-    | 'node_delete' 
-    | 'node_batch_delete' 
-    | 'reaction' 
-    | 'user_state' 
+  type:
+    | 'join'
+    | 'leave'
+    | 'cursor_move'
+    | 'node_create'
+    | 'node_update'
+    | 'node_batch_update'
+    | 'node_delete'
+    | 'node_batch_delete'
+    | 'reaction'
+    | 'user_state'
     | 'full_sync';
   boardId: string;
   sender: UserProfile;

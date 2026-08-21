@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { CanvasNode } from '../../types.ts';
 
 interface RectangleNodeProps {
@@ -39,7 +40,9 @@ export const RectangleNode: React.FC<RectangleNodeProps> = ({ node, isSelected, 
         borderStyle: 'solid',
         borderRadius: `${node.borderRadius || 0}px`,
         opacity: node.opacity ?? 1,
-        boxShadow: node.shadow ? '0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4)' : 'none',
+        boxShadow: node.shadow
+          ? '0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4)'
+          : 'none',
       }}
       onDoubleClick={(e) => {
         e.stopPropagation();

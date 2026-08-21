@@ -1,19 +1,21 @@
-import React from 'react';
-import { CanvasNode, NodeType } from '../types.ts';
 import {
-  Layers,
-  Square,
-  Circle,
-  Type,
-  StickyNote,
   ArrowUpRight,
-  Image as ImageIcon,
-  Search,
-  Lock,
-  Unlock,
+  Circle,
   Eye,
   EyeOff,
+  Image as ImageIcon,
+  Layers,
+  Lock,
+  Search,
+  Square,
+  StickyNote,
+  Type,
+  Unlock,
 } from 'lucide-react';
+import React from 'react';
+
+import { CanvasNode, NodeType } from '../types.ts';
+import { PanelToggleButton } from './common/PanelToggleButton.tsx';
 
 interface LayersPanelProps {
   nodes: CanvasNode[];
@@ -86,14 +88,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
 
   if (!isOpen) {
     return (
-      <button
-        id="btn-open-layers"
-        onClick={onToggleOpen}
-        title="開啟圖層面板"
-        className="fixed top-16 left-4 z-30 p-2.5 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow-xl backdrop-blur-xl hover:bg-neutral-800 transition-all"
-      >
+      <PanelToggleButton id="btn-open-layers" label="開啟圖層面板" onClick={onToggleOpen}>
         <Layers className="w-4 h-4" />
-      </button>
+      </PanelToggleButton>
     );
   }
 
@@ -163,7 +160,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                     className="p-1 hover:text-white text-neutral-400"
                     title={node.isHidden ? '顯示' : '隱藏'}
                   >
-                    {node.isHidden ? <EyeOff className="w-3 h-3 text-rose-400" /> : <Eye className="w-3 h-3" />}
+                    {node.isHidden ? (
+                      <EyeOff className="w-3 h-3 text-rose-400" />
+                    ) : (
+                      <Eye className="w-3 h-3" />
+                    )}
                   </button>
                   <button
                     onClick={(e) => {
@@ -173,7 +174,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                     className="p-1 hover:text-white text-neutral-400"
                     title={node.isLocked ? '解鎖' : '鎖定'}
                   >
-                    {node.isLocked ? <Lock className="w-3 h-3 text-amber-400" /> : <Unlock className="w-3 h-3" />}
+                    {node.isLocked ? (
+                      <Lock className="w-3 h-3 text-amber-400" />
+                    ) : (
+                      <Unlock className="w-3 h-3" />
+                    )}
                   </button>
                 </div>
               </div>

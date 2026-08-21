@@ -34,20 +34,35 @@ export async function onRequest(context) {
     const assetId = `asset_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     await env.DB.prepare(
       `INSERT OR REPLACE INTO assets (id, key, bucket, file_name, mime_type, size, url, created_by, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(assetId, key, 'canvas-assets', file.name, file.type, file.size, publicUrl, userEmail, Date.now()).run();
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        assetId,
+        key,
+        'canvas-assets',
+        file.name,
+        file.type,
+        file.size,
+        publicUrl,
+        userEmail,
+        Date.now(),
+      )
+      .run();
 
-    return new Response(JSON.stringify({
-      success: true,
-      url: publicUrl,
-      key,
-      bucket: 'canvas-assets',
-      size: file.size,
-      mimeType: file.type,
-      isR2: true,
-    }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        url: publicUrl,
+        key,
+        bucket: 'canvas-assets',
+        size: file.size,
+        mimeType: file.type,
+        isR2: true,
+      }),
+      {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      },
+    );
   }
 
   return new Response(JSON.stringify({ error: 'Method not allowed' }), {

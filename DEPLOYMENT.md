@@ -81,6 +81,7 @@ pnpm dev
 ```
 
 這會啟動 Express 伺服器，包含：
+
 - Vite 開發伺服器 (前端熱更新)
 - REST API 端點
 - WebSocket 即時同步
@@ -99,13 +100,13 @@ pnpm dev:pages
 
 ## 環境變數
 
-| 變數 | 說明 | 本地開發 | 生產環境 |
-|------|------|---------|---------|
-| `VITE_WS_HOST` | WebSocket 伺服器地址 | 不需要 | 設定為 Worker URL |
-| `CLOUDFLARE_R2_ACCOUNT_ID` | R2 帳戶 ID | 選擇性 | 選擇性 |
-| `CLOUDFLARE_R2_ACCESS_KEY_ID` | R2 存取金鑰 | 選擇性 | 選擇性 |
-| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | R2 秘密金鑰 | 選擇性 | 選擇性 |
-| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | 選擇性 | 選擇性 |
+| 變數                              | 說明                   | 本地開發 | 生產環境          |
+| --------------------------------- | ---------------------- | -------- | ----------------- |
+| `VITE_WS_HOST`                    | WebSocket 伺服器地址   | 不需要   | 設定為 Worker URL |
+| `CLOUDFLARE_R2_ACCOUNT_ID`        | R2 帳戶 ID             | 選擇性   | 選擇性            |
+| `CLOUDFLARE_R2_ACCESS_KEY_ID`     | R2 存取金鑰            | 選擇性   | 選擇性            |
+| `CLOUDFLARE_R2_SECRET_ACCESS_KEY` | R2 秘密金鑰            | 選擇性   | 選擇性            |
+| `GOOGLE_CLIENT_ID`                | Google OAuth Client ID | 選擇性   | 選擇性            |
 
 ## 部署檢查清單
 

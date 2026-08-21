@@ -1,4 +1,4 @@
-import { CanvasNode, UserPresence, SyncMessage, UserProfile } from '../types.ts';
+import { CanvasNode, SyncMessage, UserPresence, UserProfile } from '../types.ts';
 
 type SyncCallback<T> = (data: T) => void;
 
@@ -22,8 +22,17 @@ class SyncService {
   private nodeBatchDeleteListeners: Set<SyncCallback<string[]>> = new Set();
   private fullSyncListeners: Set<SyncCallback<CanvasNode[]>> = new Set();
   private presenceListeners: Set<SyncCallback<UserPresence[]>> = new Set();
-  private cursorListeners: Set<SyncCallback<{ sender: UserProfile; cursor: { x: number; y: number } | null; selectedNodeIds: string[]; isDragging?: boolean }>> = new Set();
-  private reactionListeners: Set<SyncCallback<{ sender: UserProfile; emoji: string; x: number; y: number }>> = new Set();
+  private cursorListeners: Set<
+    SyncCallback<{
+      sender: UserProfile;
+      cursor: { x: number; y: number } | null;
+      selectedNodeIds: string[];
+      isDragging?: boolean;
+    }>
+  > = new Set();
+  private reactionListeners: Set<
+    SyncCallback<{ sender: UserProfile; emoji: string; x: number; y: number }>
+  > = new Set();
   private statusListeners: Set<SyncCallback<boolean>> = new Set();
 
   constructor() {
@@ -48,7 +57,7 @@ class SyncService {
     if (typeof window === 'undefined') return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    
+
     // For production, WebSocket connects to the Durable Objects Worker
     // For local development, WebSocket connects to the same host (server.ts handles it)
     const wsHost = import.meta.env.VITE_WS_HOST || window.location.host;
@@ -148,7 +157,7 @@ class SyncService {
             cursor: msg.payload?.cursor || null,
             selectedNodeIds: msg.payload?.selectedNodeIds || [],
             isDragging: msg.payload?.isDragging,
-          })
+          }),
         );
         break;
 
@@ -189,14 +198,18 @@ class SyncService {
             emoji: msg.payload?.emoji,
             x: msg.payload?.x,
             y: msg.payload?.y,
-          })
+          }),
         );
         break;
     }
   }
 
   // Public Broadcast API
-  public sendCursorMove(cursor: { x: number; y: number } | null, selectedNodeIds: string[] = [], isDragging: boolean = false) {
+  public sendCursorMove(
+    cursor: { x: number; y: number } | null,
+    selectedNodeIds: string[] = [],
+    isDragging: boolean = false,
+  ) {
     if (!this.currentUser) return;
     const now = Date.now();
 
@@ -327,12 +340,21 @@ class SyncService {
     return () => this.presenceListeners.delete(cb);
   }
 
-  public onCursor(cb: SyncCallback<{ sender: UserProfile; cursor: { x: number; y: number } | null; selectedNodeIds: string[]; isDragging?: boolean }>) {
+  public onCursor(
+    cb: SyncCallback<{
+      sender: UserProfile;
+      cursor: { x: number; y: number } | null;
+      selectedNodeIds: string[];
+      isDragging?: boolean;
+    }>,
+  ) {
     this.cursorListeners.add(cb);
     return () => this.cursorListeners.delete(cb);
   }
 
-  public onReaction(cb: SyncCallback<{ sender: UserProfile; emoji: string; x: number; y: number }>) {
+  public onReaction(
+    cb: SyncCallback<{ sender: UserProfile; emoji: string; x: number; y: number }>,
+  ) {
     this.reactionListeners.add(cb);
     return () => this.reactionListeners.delete(cb);
   }

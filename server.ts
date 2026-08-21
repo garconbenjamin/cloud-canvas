@@ -5,7 +5,11 @@ import multer from 'multer';
 import { WebSocketServer, WebSocket } from 'ws';
 import { dbService } from './server/db.ts';
 import { r2Service } from './server/r2.ts';
-import { getWranglerToml, getWorkerTypeScript, getDeployGuideMarkdown } from './server/cloudflare-templates.ts';
+import {
+  getWranglerToml,
+  getWorkerTypeScript,
+  getDeployGuideMarkdown,
+} from './server/cloudflare-templates.ts';
 import { CanvasNode, UserPresence, SyncMessage } from './src/types.ts';
 
 const app = express();
@@ -80,12 +84,17 @@ function broadcastPresenceList(boardId: string) {
 wss.on('connection', (ws: WebSocket, req) => {
   const url = new URL(req.url || '', `http://${req.headers.host}`);
   const boardId = url.searchParams.get('boardId') || 'default';
-  const userId = url.searchParams.get('userId') || `guest_${Math.random().toString(36).slice(2, 8)}`;
-  const connectionId = url.searchParams.get('clientId') || `conn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const userId =
+    url.searchParams.get('userId') || `guest_${Math.random().toString(36).slice(2, 8)}`;
+  const connectionId =
+    url.searchParams.get('clientId') ||
+    `conn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const userName = url.searchParams.get('userName') || `訪客 ${userId.slice(0, 4)}`;
   const userEmail = url.searchParams.get('userEmail') || `${userId}@user.local`;
   const userColor = url.searchParams.get('userColor') || '#6366f1';
-  const userAvatar = url.searchParams.get('userAvatar') || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+  const userAvatar =
+    url.searchParams.get('userAvatar') ||
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
 
   const userPresence: UserPresence = {
     id: userId,
@@ -180,7 +189,8 @@ app.get('/api/board/:id', (req: Request, res: Response) => {
 
 app.post('/api/boards', (req: Request, res: Response) => {
   const { id, ownerId, title } = req.body || {};
-  if (!id || !ownerId) return res.status(400).json({ success: false, error: 'id and ownerId are required' });
+  if (!id || !ownerId)
+    return res.status(400).json({ success: false, error: 'id and ownerId are required' });
   return res.json({ success: true, board: dbService.createBoard(id, ownerId, title) });
 });
 
@@ -192,7 +202,8 @@ app.get('/api/boards', (req: Request, res: Response) => {
 app.patch('/api/board/:id', (req: Request, res: Response) => {
   const { ownerId, title } = req.body || {};
   const board = dbService.updateBoardTitle(req.params.id, ownerId, title || '');
-  if (!board) return res.status(403).json({ success: false, error: 'Only the board owner can rename it' });
+  if (!board)
+    return res.status(403).json({ success: false, error: 'Only the board owner can rename it' });
   return res.json({ success: true, board });
 });
 

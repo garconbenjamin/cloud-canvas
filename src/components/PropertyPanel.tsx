@@ -1,27 +1,29 @@
-import React from 'react';
-import { CanvasNode, UserProfile } from '../types.ts';
-import { PRESET_COLORS, STICKY_COLORS } from '../lib/constants.ts';
 import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  ArrowDown,
+  ArrowUp,
+  Bold,
+  BringToFront,
+  Clock,
+  Cloud,
   Copy,
-  Trash2,
-  Lock,
-  Unlock,
+  Database,
   Eye,
   EyeOff,
-  BringToFront,
+  Lock,
   SendToBack,
-  ArrowUp,
-  ArrowDown,
-  Cloud,
-  Database,
-  User,
-  Clock,
   Sparkles,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Bold,
+  Trash2,
+  Unlock,
+  User,
 } from 'lucide-react';
+import React from 'react';
+
+import { PRESET_COLORS, STICKY_COLORS } from '../lib/constants.ts';
+import { CanvasNode, UserProfile } from '../types.ts';
+import { PanelToggleButton } from './common/PanelToggleButton.tsx';
 
 interface PropertyPanelProps {
   selectedNodes: CanvasNode[];
@@ -56,14 +58,14 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 }) => {
   if (!isOpen) {
     return (
-      <button
+      <PanelToggleButton
         id="btn-open-property-panel"
+        label="開啟屬性面板"
+        side="right"
         onClick={onToggleOpen}
-        title="開啟屬性面板"
-        className="fixed top-16 right-4 z-30 p-2.5 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-300 hover:text-white shadow-xl backdrop-blur-xl hover:bg-neutral-800 transition-all"
       >
         <Database className="w-4 h-4" />
-      </button>
+      </PanelToggleButton>
     );
   }
 
@@ -83,7 +85,13 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         <div className="flex items-center gap-2 pb-3 border-b border-neutral-800 text-neutral-300 font-semibold">
           <Database className="w-4 h-4 text-orange-400" />
           <span>畫布屬性 / D1 資料庫</span>
-          <button onClick={onToggleOpen} className="ml-auto text-neutral-500 hover:text-white" title="收合屬性面板">收合</button>
+          <button
+            onClick={onToggleOpen}
+            className="ml-auto text-neutral-500 hover:text-white"
+            title="收合屬性面板"
+          >
+            收合
+          </button>
         </div>
         <div className="mt-3">{hoverToggle}</div>
 
@@ -111,7 +119,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
           </div>
           <div className="flex justify-between">
             <span>複製 / 刪除</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">Ctrl+D / Del</kbd>
+            <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+              Ctrl+D / Del
+            </kbd>
           </div>
         </div>
       </aside>
@@ -133,9 +143,8 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
   const handleDimensionChange = (field: 'width' | 'height', value: number) => {
     selectedNodes.forEach((node) => {
-      const updates: Partial<CanvasNode> = node.type === 'circle'
-        ? { width: value, height: value }
-        : { [field]: value };
+      const updates: Partial<CanvasNode> =
+        node.type === 'circle' ? { width: value, height: value } : { [field]: value };
       onUpdateNode(node.id, {
         ...updates,
         lastEditedBy: currentUser,
@@ -161,12 +170,20 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
           <span className="capitalize px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
             {isMultiple ? `${selectedNodes.length} 個節點` : primaryNode.type}
           </span>
-          <span className="text-neutral-400 font-mono text-[11px]">#{primaryNode.id.slice(0, 8)}</span>
+          <span className="text-neutral-400 font-mono text-[11px]">
+            #{primaryNode.id.slice(0, 8)}
+          </span>
         </div>
 
         {/* Quick Actions */}
         <div className="flex items-center gap-1">
-          <button onClick={onToggleOpen} className="px-2 py-0.5 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white" title="收合屬性面板">收合</button>
+          <button
+            onClick={onToggleOpen}
+            className="px-2 py-0.5 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white"
+            title="收合屬性面板"
+          >
+            收合
+          </button>
           <button
             onClick={onDuplicateSelected}
             title="複製節點 (Ctrl+D)"
@@ -187,7 +204,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
       {/* Transform Coordinates & Dimensions */}
       <div className="space-y-2">
-        <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">位置與尺寸</span>
+        <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+          位置與尺寸
+        </span>
         <div className="grid grid-cols-2 gap-2 font-mono">
           <div className="flex items-center bg-neutral-950/60 rounded border border-neutral-800 px-2 py-1">
             <span className="text-neutral-500 mr-2">X</span>
@@ -213,7 +232,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               type="number"
               min="10"
               value={Math.round(primaryNode.width)}
-              onChange={(e) => handleDimensionChange('width', Math.max(10, parseFloat(e.target.value) || 10))}
+              onChange={(e) =>
+                handleDimensionChange('width', Math.max(10, parseFloat(e.target.value) || 10))
+              }
               className="w-full bg-transparent outline-none text-right text-neutral-200"
             />
           </div>
@@ -223,7 +244,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               type="number"
               min="10"
               value={Math.round(primaryNode.height)}
-              onChange={(e) => handleDimensionChange('height', Math.max(10, parseFloat(e.target.value) || 10))}
+              onChange={(e) =>
+                handleDimensionChange('height', Math.max(10, parseFloat(e.target.value) || 10))
+              }
               className="w-full bg-transparent outline-none text-right text-neutral-200"
             />
           </div>
@@ -238,7 +261,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
               min="0"
               max="100"
               value={primaryNode.borderRadius || 0}
-              onChange={(e) => handlePropertyChange('borderRadius', Math.max(0, parseInt(e.target.value) || 0))}
+              onChange={(e) =>
+                handlePropertyChange('borderRadius', Math.max(0, parseInt(e.target.value) || 0))
+              }
               className="w-full bg-transparent outline-none text-right text-neutral-200"
             />
           </div>
@@ -260,8 +285,10 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       {/* Colors & Styling */}
       {primaryNode.type !== 'image' && (
         <div className="space-y-2 pt-2 border-t border-neutral-800">
-          <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">填充色彩</span>
-          
+          <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+            填充色彩
+          </span>
+
           <div className="flex items-center gap-2">
             <input
               type="color"
@@ -294,7 +321,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       {/* Border & Stroke */}
       <div className="space-y-2 pt-2 border-t border-neutral-800">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">邊框線條</span>
+          <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+            邊框線條
+          </span>
           <span className="font-mono text-neutral-400">{primaryNode.strokeWidth || 0}px</span>
         </div>
 
@@ -319,7 +348,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
       {/* Typography for Text / Sticky / Shapes with Text */}
       {(primaryNode.type === 'text' || primaryNode.type === 'sticky' || primaryNode.text) && (
         <div className="space-y-2 pt-2 border-t border-neutral-800">
-          <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">文字排版</span>
+          <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+            文字排版
+          </span>
           <div className="flex items-center gap-2">
             <div className="flex-1 flex items-center bg-neutral-950/60 rounded border border-neutral-800 px-2 py-1">
               <span className="text-neutral-500 mr-2 text-[10px]">大小</span>
@@ -384,7 +415,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
 
       {/* Layer Hierarchy Actions */}
       <div className="space-y-2 pt-2 border-t border-neutral-800">
-        <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">圖層順序</span>
+        <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
+          圖層順序
+        </span>
         <div className="grid grid-cols-4 gap-1">
           <button
             onClick={onBringToFront}
@@ -445,7 +478,9 @@ export const PropertyPanel: React.FC<PropertyPanelProps> = ({
         {primaryNode.lastEditedBy && (
           <div className="flex items-center justify-between text-neutral-300">
             <span className="text-neutral-500">最後修改:</span>
-            <span>{primaryNode.lastEditedBy.name} ({formatDate(primaryNode.lastEditedAt)})</span>
+            <span>
+              {primaryNode.lastEditedBy.name} ({formatDate(primaryNode.lastEditedAt)})
+            </span>
           </div>
         )}
       </div>

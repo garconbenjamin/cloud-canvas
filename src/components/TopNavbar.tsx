@@ -1,17 +1,18 @@
-import React from 'react';
-import { UserPresence, UserProfile, CloudflareStatus } from '../types.ts';
 import {
   Cloud,
-  Database,
-  Users,
   Copy,
-  ExternalLink,
+  Database,
   Download,
-  Share2,
+  ExternalLink,
   RotateCcw,
-  Sparkles,
+  Share2,
   ShieldCheck,
+  Sparkles,
+  Users,
 } from 'lucide-react';
+import React from 'react';
+
+import { CloudflareStatus, UserPresence, UserProfile } from '../types.ts';
 
 interface TopNavbarProps {
   boardTitle: string;
@@ -109,7 +110,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               }}
               className="px-2 py-1 rounded bg-neutral-950 border border-indigo-500 text-xs font-semibold text-white outline-none max-w-[200px]"
             />
-            <button onMouseDown={(e) => e.preventDefault()} onClick={handleTitleCancel} className="text-xs text-neutral-400 hover:text-white px-1" title="取消修改">取消</button>
+            <button
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={handleTitleCancel}
+              className="text-xs text-neutral-400 hover:text-white px-1"
+              title="取消修改"
+            >
+              取消
+            </button>
           </div>
         ) : canEditBoardTitle ? (
           <button
@@ -120,10 +128,18 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             {boardTitle}
           </button>
         ) : (
-          <span className="text-xs font-semibold text-neutral-300 px-2 py-1 truncate max-w-[180px]" title="只有畫布建立者可以修改名稱">{boardTitle}</span>
+          <span
+            className="text-xs font-semibold text-neutral-300 px-2 py-1 truncate max-w-[180px]"
+            title="只有畫布建立者可以修改名稱"
+          >
+            {boardTitle}
+          </span>
         )}
 
-        <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-neutral-500 border-l border-neutral-800 pl-3" title="畫布建立者">
+        <span
+          className="hidden md:inline-flex items-center gap-1 text-[11px] text-neutral-500 border-l border-neutral-800 pl-3"
+          title="畫布建立者"
+        >
           <ShieldCheck className="w-3 h-3 text-indigo-400" />
           Owner: <span className="text-neutral-300 max-w-[120px] truncate">{boardOwnerName}</span>
         </span>
@@ -274,10 +290,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           <span className="font-medium text-neutral-200 max-w-[90px] truncate hidden sm:inline">
             {currentUser.name}
           </span>
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: currentUser.color }}
-          />
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentUser.color }} />
         </button>
       </div>
     </header>

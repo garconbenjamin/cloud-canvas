@@ -1,20 +1,15 @@
 import React from 'react';
-import {
-  CanvasNode,
-  NodeType,
-  ToolMode,
-  Viewport,
-  UserPresence,
-  UserProfile,
-} from '../types.ts';
-import { RectangleNode } from './nodes/RectangleNode.tsx';
-import { CircleNode } from './nodes/CircleNode.tsx';
-import { TextNode } from './nodes/TextNode.tsx';
-import { StickyNode } from './nodes/StickyNode.tsx';
-import { ImageNode } from './nodes/ImageNode.tsx';
-import { ArrowNode } from './nodes/ArrowNode.tsx';
-import { LiveCursors } from './LiveCursors.tsx';
+
+import { useScreenToWorld } from '../hooks/useScreenToWorld.ts';
 import { STICKY_COLORS } from '../lib/constants.ts';
+import { CanvasNode, NodeType, ToolMode, UserPresence, UserProfile, Viewport } from '../types.ts';
+import { LiveCursors } from './LiveCursors.tsx';
+import { ArrowNode } from './nodes/ArrowNode.tsx';
+import { CircleNode } from './nodes/CircleNode.tsx';
+import { ImageNode } from './nodes/ImageNode.tsx';
+import { RectangleNode } from './nodes/RectangleNode.tsx';
+import { StickyNode } from './nodes/StickyNode.tsx';
+import { TextNode } from './nodes/TextNode.tsx';
 
 interface CanvasProps {
   nodes: CanvasNode[];
@@ -33,7 +28,11 @@ interface CanvasProps {
   currentUser: UserProfile;
   presences: UserPresence[];
   showHoverInfo: boolean;
-  onSendCursor: (cursor: { x: number; y: number } | null, selectedIds: string[], isDragging?: boolean) => void;
+  onSendCursor: (
+    cursor: { x: number; y: number } | null,
+    selectedIds: string[],
+    isDragging?: boolean,
+  ) => void;
   onUploadImageFile: (file: File, x: number, y: number) => void;
 }
 
@@ -69,10 +68,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Dragging nodes state
   const [isDraggingNodes, setIsDraggingNodes] = React.useState(false);
   const [dragStartPos, setDragStartPos] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [initialNodePositions, setInitialNodePositions] = React.useState<Map<string, { x: number; y: number }>>(new Map());
+  const [initialNodePositions, setInitialNodePositions] = React.useState<
+    Map<string, { x: number; y: number }>
+  >(new Map());
 
   // Marquee selection state
-  const [marquee, setMarquee] = React.useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+  const [marquee, setMarquee] = React.useState<{
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  } | null>(null);
 
   // Resizing node state
   const [activeResizeHandle, setActiveResizeHandle] = React.useState<ResizeHandleType | null>(null);
@@ -101,39 +107,36 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [isDragOverFile, setIsDragOverFile] = React.useState(false);
 
   // Convert Screen coordinates to Canvas World coordinates
-  const screenToWorld = React.useCallback(
+  const screenToWorld = useScreenToWorld(containerRef, viewport);
+
+  const getRotationNodeAtPoint = React.useCallback(
     (screenX: number, screenY: number) => {
-      const containerRect = containerRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
-      const relX = screenX - containerRect.left;
-      const relY = screenY - containerRect.top;
-      return {
-        x: (relX - viewport.x) / viewport.zoom,
-        y: (relY - viewport.y) / viewport.zoom,
-      };
+      if (selectedNodeIds.length !== 1) return null;
+      const node = nodes.find((item) => item.id === selectedNodeIds[0]);
+      if (!node || node.isLocked || node.isHidden) return null;
+
+      const centerX = (node.x + node.width / 2) * viewport.zoom + viewport.x;
+      const centerY = (node.y + node.height / 2) * viewport.zoom + viewport.y;
+      const radians = (node.rotation || 0) * (Math.PI / 180);
+      const cos = Math.cos(radians);
+      const sin = Math.sin(radians);
+
+      for (const [horizontal, vertical] of [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ]) {
+        const localX = (horizontal * node.width * viewport.zoom) / 2;
+        const localY = (vertical * node.height * viewport.zoom) / 2;
+        const cornerX = centerX + localX * cos - localY * sin;
+        const cornerY = centerY + localX * sin + localY * cos;
+        if (Math.hypot(screenX - cornerX, screenY - cornerY) <= 22) return node;
+      }
+      return null;
     },
-    [viewport]
+    [nodes, selectedNodeIds, viewport],
   );
-
-  const getRotationNodeAtPoint = React.useCallback((screenX: number, screenY: number) => {
-    if (selectedNodeIds.length !== 1) return null;
-    const node = nodes.find((item) => item.id === selectedNodeIds[0]);
-    if (!node || node.isLocked || node.isHidden) return null;
-
-    const centerX = (node.x + node.width / 2) * viewport.zoom + viewport.x;
-    const centerY = (node.y + node.height / 2) * viewport.zoom + viewport.y;
-    const radians = (node.rotation || 0) * (Math.PI / 180);
-    const cos = Math.cos(radians);
-    const sin = Math.sin(radians);
-
-    for (const [horizontal, vertical] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-      const localX = horizontal * node.width * viewport.zoom / 2;
-      const localY = vertical * node.height * viewport.zoom / 2;
-      const cornerX = centerX + localX * cos - localY * sin;
-      const cornerY = centerY + localX * sin + localY * cos;
-      if (Math.hypot(screenX - cornerX, screenY - cornerY) <= 22) return node;
-    }
-    return null;
-  }, [nodes, selectedNodeIds, viewport]);
 
   // Listen to global keyboard shortcuts
   React.useEffect(() => {
@@ -195,7 +198,12 @@ export const Canvas: React.FC<CanvasProps> = ({
         const intersectingIds = nodes
           .filter((n) => {
             if (n.isHidden || n.isLocked) return false;
-            return !(n.x > mRight || n.x + n.width < mLeft || n.y > mBottom || n.y + n.height < mTop);
+            return !(
+              n.x > mRight ||
+              n.x + n.width < mLeft ||
+              n.y > mBottom ||
+              n.y + n.height < mTop
+            );
           })
           .map((n) => n.id);
 
@@ -238,36 +246,54 @@ export const Canvas: React.FC<CanvasProps> = ({
         // Circles always retain a 1:1 aspect ratio, including side-handle resizing.
         if (resizeInitial.nodeType === 'circle') {
           const initialSize = Math.max(resizeInitial.initialWidth, resizeInitial.initialHeight);
-          const horizontalDelta = activeResizeHandle.includes('e') ? dx : activeResizeHandle.includes('w') ? -dx : 0;
-          const verticalDelta = activeResizeHandle.includes('s') ? dy : activeResizeHandle.includes('n') ? -dy : 0;
-          const sizeDelta = activeResizeHandle.length === 2
-            ? Math.max(horizontalDelta, verticalDelta)
-            : horizontalDelta || verticalDelta;
+          const horizontalDelta = activeResizeHandle.includes('e')
+            ? dx
+            : activeResizeHandle.includes('w')
+              ? -dx
+              : 0;
+          const verticalDelta = activeResizeHandle.includes('s')
+            ? dy
+            : activeResizeHandle.includes('n')
+              ? -dy
+              : 0;
+          const sizeDelta =
+            activeResizeHandle.length === 2
+              ? Math.max(horizontalDelta, verticalDelta)
+              : horizontalDelta || verticalDelta;
           const newSize = Math.max(20, initialSize + sizeDelta);
 
           newWidth = newSize;
           newHeight = newSize;
-          if (activeResizeHandle.includes('w')) newX = resizeInitial.initialX + initialSize - newSize;
-          if (activeResizeHandle.includes('n')) newY = resizeInitial.initialY + initialSize - newSize;
+          if (activeResizeHandle.includes('w'))
+            newX = resizeInitial.initialX + initialSize - newSize;
+          if (activeResizeHandle.includes('n'))
+            newY = resizeInitial.initialY + initialSize - newSize;
         }
 
         const updated = nodes.map((n) =>
           n.id === resizeInitial.nodeId
             ? { ...n, x: newX, y: newY, width: newWidth, height: newHeight }
-            : n
+            : n,
         );
 
         if (onLocalTransformNodes) {
           onLocalTransformNodes(updated.filter((n) => n.id === resizeInitial.nodeId));
         } else {
-          onUpdateNode(resizeInitial.nodeId, { x: newX, y: newY, width: newWidth, height: newHeight });
+          onUpdateNode(resizeInitial.nodeId, {
+            x: newX,
+            y: newY,
+            width: newWidth,
+            height: newHeight,
+          });
         }
         return;
       }
 
       // 4. Handling Node Rotation
       if (rotationInitial) {
-        const angle = Math.atan2(world.y - rotationInitial.centerY, world.x - rotationInitial.centerX) * (180 / Math.PI);
+        const angle =
+          Math.atan2(world.y - rotationInitial.centerY, world.x - rotationInitial.centerX) *
+          (180 / Math.PI);
         const rotation = rotationInitial.initialRotation + angle - rotationInitial.startAngle;
         const updatedNode = nodes.find((node) => node.id === rotationInitial.nodeId);
         if (!updatedNode) return;
@@ -676,7 +702,10 @@ export const Canvas: React.FC<CanvasProps> = ({
           if (item.type.indexOf('image') !== -1) {
             const file = item.getAsFile();
             if (file) {
-              const containerRect = containerRef.current?.getBoundingClientRect() || { width: 800, height: 600 };
+              const containerRect = containerRef.current?.getBoundingClientRect() || {
+                width: 800,
+                height: 600,
+              };
               const centerWorld = screenToWorld(containerRect.width / 2, containerRect.height / 2);
               onUploadImageFile(file, centerWorld.x, centerWorld.y);
             }
@@ -695,7 +724,7 @@ export const Canvas: React.FC<CanvasProps> = ({
 
     // Check if other peers are selecting/dragging this node
     const peerSelecting = presences.find(
-      (p) => p.id !== currentUser.id && p.selectedNodeIds.includes(node.id)
+      (p) => p.id !== currentUser.id && p.selectedNodeIds.includes(node.id),
     );
 
     return (
@@ -754,12 +783,8 @@ export const Canvas: React.FC<CanvasProps> = ({
             onUpdateText={(text) => onUpdateNode(node.id, { text })}
           />
         )}
-        {node.type === 'image' && (
-          <ImageNode node={node} isSelected={isSelected} />
-        )}
-        {node.type === 'arrow' && (
-          <ArrowNode node={node} isSelected={isSelected} />
-        )}
+        {node.type === 'image' && <ImageNode node={node} isSelected={isSelected} />}
+        {node.type === 'arrow' && <ArrowNode node={node} isSelected={isSelected} />}
 
         {/* Real-time Peer Halo when another user is selecting/editing */}
         {peerSelecting && (
@@ -780,12 +805,14 @@ export const Canvas: React.FC<CanvasProps> = ({
         {isSelected && selectedNodeIds.length === 1 && !node.isLocked && (
           <div className="absolute inset-0 pointer-events-none z-50">
             {/* Visible rotation controls at each corner. */}
-            {([
-              '-top-5 -left-5',
-              '-top-5 -right-5',
-              '-bottom-5 -right-5',
-              '-bottom-5 -left-5',
-            ] as const).map((position) => (
+            {(
+              [
+                '-top-5 -left-5',
+                '-top-5 -right-5',
+                '-bottom-5 -right-5',
+                '-bottom-5 -left-5',
+              ] as const
+            ).map((position) => (
               <button
                 key={position}
                 type="button"
@@ -860,8 +887,8 @@ export const Canvas: React.FC<CanvasProps> = ({
         isPanning || isSpacePressed || currentTool === 'hand'
           ? 'cursor-grab active:cursor-grabbing'
           : currentTool !== 'select'
-          ? 'cursor-crosshair'
-          : 'cursor-default'
+            ? 'cursor-crosshair'
+            : 'cursor-default'
       }`}
     >
       {/* Infinite Grid Background */}
@@ -903,22 +930,30 @@ export const Canvas: React.FC<CanvasProps> = ({
       </div>
 
       {/* Live Peer Cursors */}
-      <LiveCursors
-        presences={presences}
-        currentUserId={currentUser.id}
-        viewport={viewport}
-      />
+      <LiveCursors presences={presences} currentUserId={currentUser.id} viewport={viewport} />
 
       {/* Drag Over File Upload Overlay */}
       {isDragOverFile && (
         <div className="absolute inset-0 bg-indigo-950/80 border-4 border-dashed border-indigo-500 flex flex-col items-center justify-center text-white z-50 pointer-events-none backdrop-blur-sm">
           <div className="p-4 rounded-2xl bg-indigo-600 shadow-2xl mb-3">
-            <svg className="w-12 h-12 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <svg
+              className="w-12 h-12 animate-bounce"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
             </svg>
           </div>
           <h2 className="text-xl font-bold">放開以立即上傳至 Cloudflare R2</h2>
-          <p className="text-sm text-indigo-300 mt-1">圖片將自動儲存至 R2 並由 Cloudflare D1 同步至所有協作者</p>
+          <p className="text-sm text-indigo-300 mt-1">
+            圖片將自動儲存至 R2 並由 Cloudflare D1 同步至所有協作者
+          </p>
         </div>
       )}
     </div>

@@ -24,7 +24,7 @@ export async function onRequest(context) {
     }
 
     const stmts = nodeIds.map((nodeId) =>
-      env.DB.prepare('DELETE FROM nodes WHERE id = ? AND board_id = ?').bind(nodeId, boardId)
+      env.DB.prepare('DELETE FROM nodes WHERE id = ? AND board_id = ?').bind(nodeId, boardId),
     );
 
     await env.DB.batch(stmts);

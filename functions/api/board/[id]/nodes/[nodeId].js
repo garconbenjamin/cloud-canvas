@@ -15,8 +15,10 @@ export async function onRequest(context) {
 
   if (request.method === 'DELETE') {
     const { results } = await env.DB.prepare(
-      'DELETE FROM nodes WHERE id = ? AND board_id = ? RETURNING id'
-    ).bind(nodeId, boardId).all();
+      'DELETE FROM nodes WHERE id = ? AND board_id = ? RETURNING id',
+    )
+      .bind(nodeId, boardId)
+      .all();
 
     return new Response(JSON.stringify({ success: results.length > 0 }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

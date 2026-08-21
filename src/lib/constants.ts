@@ -43,28 +43,32 @@ export const DEMO_USERS: UserProfile[] = [
     id: 'user_kevin',
     name: 'Kevin (Owner)',
     email: 'kevin820422@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
     color: '#6366f1',
   },
   {
     id: 'user_alex',
     name: 'Alex UI/UX',
     email: 'alex.designer@cloudflare-d1.app',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
     color: '#ec4899',
   },
   {
     id: 'user_emma',
     name: 'Emma Cloud Arch',
     email: 'emma.edge@workers.dev',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80',
     color: '#10b981',
   },
   {
     id: 'user_developer',
     name: 'Full-stack Dev',
     email: 'dev@cloudflare-r2.io',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+    avatar:
+      'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
     color: '#f59e0b',
   },
 ];

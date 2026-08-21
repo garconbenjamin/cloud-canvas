@@ -16,12 +16,17 @@ export class BoardSync {
 
     if (request.headers.get('Upgrade') === 'websocket') {
       this.boardId = url.searchParams.get('boardId') || 'default';
-      const userId = url.searchParams.get('userId') || `guest_${Math.random().toString(36).slice(2, 8)}`;
-      const connectionId = url.searchParams.get('clientId') || `conn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const userId =
+        url.searchParams.get('userId') || `guest_${Math.random().toString(36).slice(2, 8)}`;
+      const connectionId =
+        url.searchParams.get('clientId') ||
+        `conn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const userName = url.searchParams.get('userName') || `訪客 ${userId.slice(0, 4)}`;
       const userEmail = url.searchParams.get('userEmail') || `${userId}@user.local`;
       const userColor = url.searchParams.get('userColor') || '#6366f1';
-      const userAvatar = url.searchParams.get('userAvatar') || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
+      const userAvatar =
+        url.searchParams.get('userAvatar') ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`;
 
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);

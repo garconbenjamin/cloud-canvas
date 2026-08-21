@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer base {
   * {
@@ -10,7 +10,11 @@
     -webkit-user-select: none;
     overflow: hidden;
     touch-action: none;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family:
+      'Plus Jakarta Sans',
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
   }
 
   /* Custom subtle scrollbar */

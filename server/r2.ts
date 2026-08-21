@@ -52,10 +52,15 @@ class CloudflareR2Service {
         this.publicUrl = pubUrl || `https://${bucket}.${accountId}.r2.cloudflarestorage.com`;
         console.log(`[Cloudflare R2] Configured and connected to bucket: ${bucket}`);
       } catch (err) {
-        console.warn('[Cloudflare R2] Failed to initialize S3 client, using local persistent fallback:', err);
+        console.warn(
+          '[Cloudflare R2] Failed to initialize S3 client, using local persistent fallback:',
+          err,
+        );
       }
     } else {
-      console.log('[Cloudflare R2] Credentials not provided; using persistent local storage emulation for R2');
+      console.log(
+        '[Cloudflare R2] Credentials not provided; using persistent local storage emulation for R2',
+      );
     }
   }
 
@@ -71,7 +76,7 @@ class CloudflareR2Service {
     buffer: Buffer,
     originalName: string,
     mimeType: string,
-    prefix: string = 'canvas-images'
+    prefix: string = 'canvas-images',
   ): Promise<UploadResult> {
     const ext = path.extname(originalName) || '.png';
     const hash = crypto.randomBytes(16).toString('hex');
@@ -90,7 +95,9 @@ class CloudflareR2Service {
 
         await this.s3Client.send(command);
 
-        const url = this.publicUrl ? `${this.publicUrl.replace(/\/$/, '')}/${key}` : `/api/storage/${encodeURIComponent(key)}`;
+        const url = this.publicUrl
+          ? `${this.publicUrl.replace(/\/$/, '')}/${key}`
+          : `/api/storage/${encodeURIComponent(key)}`;
 
         return {
           success: true,
@@ -103,7 +110,10 @@ class CloudflareR2Service {
           isR2: true,
         };
       } catch (error: any) {
-        console.error('[Cloudflare R2] Upload to Cloudflare R2 failed, falling back to local storage:', error);
+        console.error(
+          '[Cloudflare R2] Upload to Cloudflare R2 failed, falling back to local storage:',
+          error,
+        );
       }
     }
 

@@ -26,7 +26,8 @@ const DEFAULT_USER: UserProfile = {
   id: 'user_owner',
   name: 'Kevin (Owner)',
   email: 'kevin820422@gmail.com',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+  avatar:
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
   color: '#6366f1',
 };
 
@@ -80,7 +81,8 @@ const DEFAULT_NODES: CanvasNode[] = [
       id: 'user_alex',
       name: 'Alex Design',
       email: 'alex@design.co',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+      avatar:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
       color: '#ec4899',
     },
     createdAt: Date.now() - 80000,
@@ -132,7 +134,7 @@ const DEFAULT_NODES: CanvasNode[] = [
     textColor: '#fdba74',
     createdBy: DEFAULT_USER,
     createdAt: Date.now() - 40000,
-  }
+  },
 ];
 
 class D1DatabaseService {
@@ -323,7 +325,14 @@ class D1DatabaseService {
 
   public createBoard(boardId: string, ownerId: string, title = '未命名畫布'): Board {
     const now = Date.now();
-    const board: Board = { id: boardId, title, ownerId, createdAt: now, updatedAt: now, nodeCount: 0 };
+    const board: Board = {
+      id: boardId,
+      title,
+      ownerId,
+      createdAt: now,
+      updatedAt: now,
+      nodeCount: 0,
+    };
     this.data.boards[boardId] = board;
     this.data.nodes[boardId] = [];
     this.save();
@@ -420,7 +429,7 @@ class D1DatabaseService {
 
       lines.push(
         `INSERT OR REPLACE INTO nodes (id, board_id, type, x, y, width, height, rotation, z_index, fill_color, stroke_color, stroke_width, opacity, border_radius, shadow, text, font_size, font_family, font_weight, text_align, text_color, image_url, r2_key, r2_bucket, file_size, mime_type, aspect_ratio, created_by, created_at, last_edited_by, last_edited_at, is_locked, is_hidden) VALUES (` +
-          `'${n.id}', '${boardId}', '${n.type}', ${n.x}, ${n.y}, ${n.width}, ${n.height}, ${n.rotation || 0}, ${n.zIndex || 1}, '${escape(n.fillColor)}', '${escape(n.strokeColor)}', ${n.strokeWidth || 1}, ${n.opacity ?? 1}, ${n.borderRadius || 0}, ${n.shadow ? 1 : 0}, '${escape(n.text)}', ${n.fontSize || 16}, '${escape(n.fontFamily)}', '${escape(n.fontWeight)}', '${escape(n.textAlign)}', '${escape(n.textColor)}', '${escape(n.imageUrl)}', '${escape(n.r2Key)}', '${escape(n.r2Bucket)}', ${n.fileSize || 0}, '${escape(n.mimeType)}', ${n.aspectRatio || 1}, '${createdByJson}', ${n.createdAt || Date.now()}, '${lastEditedByJson}', ${n.lastEditedAt || Date.now()}, ${n.isLocked ? 1 : 0}, ${n.isHidden ? 1 : 0});`
+          `'${n.id}', '${boardId}', '${n.type}', ${n.x}, ${n.y}, ${n.width}, ${n.height}, ${n.rotation || 0}, ${n.zIndex || 1}, '${escape(n.fillColor)}', '${escape(n.strokeColor)}', ${n.strokeWidth || 1}, ${n.opacity ?? 1}, ${n.borderRadius || 0}, ${n.shadow ? 1 : 0}, '${escape(n.text)}', ${n.fontSize || 16}, '${escape(n.fontFamily)}', '${escape(n.fontWeight)}', '${escape(n.textAlign)}', '${escape(n.textColor)}', '${escape(n.imageUrl)}', '${escape(n.r2Key)}', '${escape(n.r2Bucket)}', ${n.fileSize || 0}, '${escape(n.mimeType)}', ${n.aspectRatio || 1}, '${createdByJson}', ${n.createdAt || Date.now()}, '${lastEditedByJson}', ${n.lastEditedAt || Date.now()}, ${n.isLocked ? 1 : 0}, ${n.isHidden ? 1 : 0});`,
       );
     }
 

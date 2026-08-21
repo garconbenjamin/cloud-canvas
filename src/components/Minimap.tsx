@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { CanvasNode, Viewport } from '../types.ts';
 
 interface MinimapProps {
@@ -21,7 +22,9 @@ export const Minimap: React.FC<MinimapProps> = ({
     right: 24,
     bottom: 24,
   }));
-  const dragRef = React.useRef<{ x: number; y: number; right: number; bottom: number } | null>(null);
+  const dragRef = React.useRef<{ x: number; y: number; right: number; bottom: number } | null>(
+    null,
+  );
   const didDragRef = React.useRef(false);
   const mapWidth = 180;
   const mapHeight = 110;
@@ -127,10 +130,7 @@ export const Minimap: React.FC<MinimapProps> = ({
         title="拖曳移動小地圖"
       >
         <span>MINIMAP</span>
-        <button
-          onClick={() => setIsExpanded(false)}
-          className="hover:text-white"
-        >
+        <button onClick={() => setIsExpanded(false)} className="hover:text-white">
           ✕
         </button>
       </div>

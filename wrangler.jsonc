@@ -9,19 +9,19 @@
     {
       "binding": "DB",
       "database_name": "canvas-d1-prod",
-      "database_id": "c011345a-01c5-4ffd-96b0-d633f86c94d4"
-    }
+      "database_id": "c011345a-01c5-4ffd-96b0-d633f86c94d4",
+    },
   ],
 
   "r2_buckets": [
     {
       "binding": "R2_BUCKET",
-      "bucket_name": "canvas-assets"
-    }
+      "bucket_name": "canvas-assets",
+    },
   ],
 
   "vars": {
     "VITE_WS_HOST": "cloud-canvas-sync.chinyu-official.workers.dev",
-    "GOOGLE_CLIENT_ID": ""
-  }
+    "GOOGLE_CLIENT_ID": "",
+  },
 }

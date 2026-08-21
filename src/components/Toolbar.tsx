@@ -1,20 +1,21 @@
-import React from 'react';
-import { ToolMode } from '../types.ts';
 import {
-  MousePointer,
-  Hand,
-  Square,
-  Circle,
-  Type,
-  StickyNote,
   ArrowUpRight,
+  Circle,
+  Hand,
   Image as ImageIcon,
-  Undo2,
+  Maximize2,
+  MousePointer,
   Redo2,
+  Square,
+  StickyNote,
+  Type,
+  Undo2,
   ZoomIn,
   ZoomOut,
-  Maximize2,
 } from 'lucide-react';
+import React from 'react';
+
+import { ToolMode } from '../types.ts';
 
 interface ToolbarProps {
   currentTool: ToolMode;
@@ -45,7 +46,6 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   onZoomToFit,
   onTriggerImageUpload,
 }) => {
-
   const tools: Array<{
     id: ToolMode;
     label: string;
@@ -114,7 +114,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           disabled={!canUndo}
           title="復原 (Ctrl+Z)"
           className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
-            canUndo ? 'hover:bg-neutral-800 text-neutral-200' : 'text-neutral-600 cursor-not-allowed'
+            canUndo
+              ? 'hover:bg-neutral-800 text-neutral-200'
+              : 'text-neutral-600 cursor-not-allowed'
           }`}
         >
           <Undo2 className="w-4 h-4" />
@@ -125,7 +127,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           disabled={!canRedo}
           title="重做 (Ctrl+Y)"
           className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
-            canRedo ? 'hover:bg-neutral-800 text-neutral-200' : 'text-neutral-600 cursor-not-allowed'
+            canRedo
+              ? 'hover:bg-neutral-800 text-neutral-200'
+              : 'text-neutral-600 cursor-not-allowed'
           }`}
         >
           <Redo2 className="w-4 h-4" />
