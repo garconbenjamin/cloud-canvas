@@ -110,6 +110,7 @@ export interface CloudflareStatus {
   r2Configured: boolean;
   r2BucketName: string;
   googleOAuthConfigured: boolean;
+  googleClientId?: string;
   totalAssets: number;
   serverTime: string;
   activePeersCount: number;

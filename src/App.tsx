@@ -7,7 +7,6 @@ import {
   UserPresence,
   CloudflareStatus,
 } from './types.ts';
-import { DEMO_USERS } from './lib/constants.ts';
 import { syncService } from './lib/syncService.ts';
 import { Canvas } from './components/Canvas.tsx';
 import { TopNavbar } from './components/TopNavbar.tsx';
@@ -18,6 +17,14 @@ import { Minimap } from './components/Minimap.tsx';
 import { GoogleAuthModal } from './components/GoogleAuthModal.tsx';
 import { CloudflareDeployModal } from './components/CloudflareDeployModal.tsx';
 import { FloatingReaction } from './components/LiveReactions.tsx';
+
+const GUEST_USER: UserProfile = {
+  id: 'guest',
+  name: '訪客',
+  email: 'guest@user.local',
+  avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=Guest',
+  color: '#6366f1',
+};
 
 export default function App() {
   // Board & Nodes State
@@ -40,11 +47,13 @@ export default function App() {
       const saved = localStorage.getItem('cloudcanvas_user');
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved) as UserProfile;
+          if (import.meta.env.DEV || parsed.id?.startsWith('google_')) return parsed;
+          localStorage.removeItem('cloudcanvas_user');
         } catch {}
       }
     }
-    return DEMO_USERS[0]; // Default to Kevin (kevin820422@gmail.com)
+    return GUEST_USER;
   });
 
   const [onlinePresences, setOnlinePresences] = React.useState<UserPresence[]>([]);
@@ -167,13 +176,19 @@ export default function App() {
   }, [boardId, currentUser]);
 
   // Persist user changes to localStorage
-  const handleSelectUser = (user: UserProfile) => {
+  const handleSelectUser = React.useCallback((user: UserProfile) => {
     setCurrentUser(user);
     if (typeof window !== 'undefined') {
       localStorage.setItem('cloudcanvas_user', JSON.stringify(user));
     }
     syncService.updateUserInfo(user);
-  };
+  }, []);
+
+  const handleSignOut = React.useCallback(() => {
+    setCurrentUser(GUEST_USER);
+    localStorage.removeItem('cloudcanvas_user');
+    syncService.updateUserInfo(GUEST_USER);
+  }, []);
 
   // Push to Undo / Redo history helper
   const pushHistory = (newNodes: CanvasNode[]) => {
@@ -782,6 +797,8 @@ export default function App() {
         onClose={() => setIsAuthModalOpen(false)}
         currentUser={currentUser}
         onSelectUser={handleSelectUser}
+        onSignOut={handleSignOut}
+        googleClientId={cloudflareStatus?.googleClientId || import.meta.env.VITE_GOOGLE_CLIENT_ID}
       />
 
       {/* Cloudflare Deploy Modal */}

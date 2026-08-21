@@ -189,6 +189,7 @@ app.get('/api/config', (req: Request, res: Response) => {
     r2Configured: r2Status.r2Configured,
     r2BucketName: r2Status.r2BucketName,
     googleOAuthConfigured: Boolean(process.env.GOOGLE_CLIENT_ID),
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     totalAssets: d1Stats.totalAssets,
     serverTime: d1Stats.serverTime,
     activePeersCount: activePeers,

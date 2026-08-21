@@ -24,6 +24,23 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
+    if (url.pathname === '/api/config' && request.method === 'GET') {
+      return new Response(JSON.stringify({
+        d1Connected: Boolean(env.DB),
+        d1DatabaseName: 'canvas-d1-prod',
+        d1NodeCount: 0,
+        r2Configured: Boolean(env.R2_BUCKET),
+        r2BucketName: 'canvas-assets',
+        googleOAuthConfigured: Boolean(env.GOOGLE_CLIENT_ID),
+        googleClientId: env.GOOGLE_CLIENT_ID || '',
+        totalAssets: 0,
+        serverTime: new Date().toISOString(),
+        activePeersCount: 0,
+      }), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      });
+    }
+
     // 1. Get Board Nodes from D1
     if (url.pathname.match(/^\/api\/board\/([^\/]+)\/nodes$/) && request.method === 'GET') {
       const boardId = url.pathname.split('/')[3] || 'default';

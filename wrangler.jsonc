@@ -21,6 +21,7 @@
   ],
 
   "vars": {
-    "VITE_WS_HOST": "cloud-canvas-sync.chinyu-official.workers.dev"
+    "VITE_WS_HOST": "cloud-canvas-sync.chinyu-official.workers.dev",
+    "GOOGLE_CLIENT_ID": ""
   }
 }

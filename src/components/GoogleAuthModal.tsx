@@ -1,13 +1,44 @@
 import React from 'react';
 import { UserProfile } from '../types.ts';
 import { DEMO_USERS } from '../lib/constants.ts';
-import { User, Check, Sparkles, LogOut, ShieldCheck, Mail } from 'lucide-react';
+import { Check, LogOut } from 'lucide-react';
+
+interface GoogleCredentialResponse {
+  credential?: string;
+}
+
+interface GoogleIdPayload {
+  sub: string;
+  name?: string;
+  email?: string;
+  picture?: string;
+  exp: number;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (options: {
+            client_id: string;
+            callback: (response: GoogleCredentialResponse) => void;
+          }) => void;
+          renderButton: (element: HTMLElement, options: Record<string, unknown>) => void;
+          disableAutoSelect: () => void;
+        };
+      };
+    };
+  }
+}
 
 interface GoogleAuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: UserProfile;
   onSelectUser: (user: UserProfile) => void;
+  onSignOut: () => void;
+  googleClientId?: string;
 }
 
 export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
@@ -15,26 +46,79 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   onClose,
   currentUser,
   onSelectUser,
+  onSignOut,
+  googleClientId,
 }) => {
   const [customName, setCustomName] = React.useState('');
   const [customEmail, setCustomEmail] = React.useState('');
   const [customColor, setCustomColor] = React.useState('#6366f1');
+  const [authError, setAuthError] = React.useState('');
+  const googleButtonRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    // If Google Identity Services is loaded and client ID exists
-    if (typeof window !== 'undefined' && (window as any).google && (window as any).google.accounts) {
+    if (!isOpen || !googleClientId) return;
+
+    let attempts = 0;
+    const renderGoogleButton = () => {
+      if (!window.google?.accounts || !googleButtonRef.current) {
+        attempts += 1;
+        if (attempts < 20) window.setTimeout(renderGoogleButton, 150);
+        else setAuthError('無法載入 Google 登入服務，請檢查網路後再試一次。');
+        return;
+      }
+
       try {
-        (window as any).google.accounts.id.initialize({
-          client_id: 'sample-google-client-id.apps.googleusercontent.com',
-          callback: (response: any) => {
-            console.log('Google Auth Credential:', response);
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (response) => {
+            try {
+              if (!response.credential) throw new Error('Google 未回傳登入憑證');
+              const encodedPayload = response.credential.split('.')[1];
+              if (!encodedPayload) throw new Error('Google 登入憑證格式錯誤');
+              const normalized = encodedPayload.replace(/-/g, '+').replace(/_/g, '/');
+              const payload = JSON.parse(
+                decodeURIComponent(
+                  Array.from(atob(normalized), (char) =>
+                    `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`
+                  ).join('')
+                )
+              ) as GoogleIdPayload;
+
+              if (!payload.sub || !payload.email || payload.exp * 1000 <= Date.now()) {
+                throw new Error('Google 登入憑證已失效');
+              }
+
+              onSelectUser({
+                id: `google_${payload.sub}`,
+                name: payload.name || payload.email.split('@')[0],
+                email: payload.email,
+                avatar: payload.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.email)}`,
+                color: customColor,
+              });
+              setAuthError('');
+              onClose();
+            } catch (error) {
+              setAuthError(error instanceof Error ? error.message : 'Google 登入失敗');
+            }
           },
         });
-      } catch (e) {
-        // Safe fallback
+        googleButtonRef.current.replaceChildren();
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          type: 'standard',
+          theme: 'filled_black',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'pill',
+          width: 380,
+          locale: 'zh_TW',
+        });
+      } catch {
+        setAuthError('Google 登入初始化失敗，請確認 Client ID 與允許的網域。');
       }
-    }
-  }, []);
+    };
+
+    renderGoogleButton();
+  }, [customColor, googleClientId, isOpen, onClose, onSelectUser]);
 
   if (!isOpen) return null;
 
@@ -120,8 +204,33 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
           />
         </div>
 
+        {googleClientId ? (
+          <div className="space-y-2">
+            <div ref={googleButtonRef} className="flex min-h-10 justify-center" />
+            {authError && <p className="text-xs text-rose-400 text-center">{authError}</p>}
+            {currentUser.id.startsWith('google_') && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.google?.accounts.id.disableAutoSelect();
+                  onSignOut();
+                  onClose();
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-neutral-800 px-3 py-2 text-xs text-neutral-300 hover:bg-neutral-800"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                登出 Google 帳號
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+            尚未設定 Google OAuth Client ID。請設定 <code>GOOGLE_CLIENT_ID</code>（本機亦可使用 <code>VITE_GOOGLE_CLIENT_ID</code>）。
+          </div>
+        )}
+
         {/* Quick Multi-user / Persona Switcher */}
-        <div className="space-y-2">
+        {import.meta.env.DEV && <div className="space-y-2">
           <div className="flex items-center justify-between text-xs text-neutral-400">
             <span className="font-semibold">快速切換測試身份（測試多人同步）</span>
             <span className="text-[11px] text-indigo-400">一鍵切換游標</span>
@@ -167,10 +276,10 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
               );
             })}
           </div>
-        </div>
+        </div>}
 
         {/* Custom Persona / Google Email input */}
-        <form onSubmit={handleCreateCustom} className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs">
+        {import.meta.env.DEV && <form onSubmit={handleCreateCustom} className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs">
           <span className="font-semibold text-neutral-400">或自訂 Google 協作者名稱</span>
           <div className="flex gap-2">
             <input
@@ -195,7 +304,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
               切換
             </button>
           </div>
-        </form>
+        </form>}
       </div>
     </div>
   );

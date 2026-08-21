@@ -6,7 +6,8 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "tsx server.ts",
-    "dev:pages": "wrangler pages dev dist --d1 DB=canvas-d1-prod --r2 R2_BUCKET=canvas-assets",
+    "dev:pages": "wrangler pages dev dist",
+    "d1:local:init": "wrangler d1 execute canvas-d1-prod --local --persist-to .wrangler/state --file=./schema.sql --yes",
     "build": "vite build",
     "build:legacy": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
