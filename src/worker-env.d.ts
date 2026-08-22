@@ -35,6 +35,10 @@ declare class DurableObject<Env = unknown> {
   constructor(ctx: DurableObjectState, env: Env);
 }
 
+declare module 'cloudflare:workers' {
+  export { DurableObject };
+}
+
 declare interface DurableObjectNamespace {
   idFromName(name: string): DurableObjectId;
   get(id: DurableObjectId): DurableObjectStub;

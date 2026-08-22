@@ -3,6 +3,8 @@
  * Handles WebSocket connections for real-time collaboration
  */
 
+import { DurableObject } from 'cloudflare:workers';
+
 interface Env {
   BOARD_SYNC: DurableObjectNamespace;
 }
