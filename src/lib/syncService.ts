@@ -85,9 +85,11 @@ class SyncService {
 
     try {
       this.setStatus('connecting');
-      this.ws = new WebSocket(wsUrl);
+      const socket = new WebSocket(wsUrl);
+      this.ws = socket;
 
-      this.ws.onopen = () => {
+      socket.onopen = () => {
+        if (this.ws !== socket) return;
         this.isConnected = true;
         this.reconnectAttempts = 0;
         this.setStatus('connected');
@@ -97,7 +99,7 @@ class SyncService {
         }
       };
 
-      this.ws.onmessage = (event) => {
+      socket.onmessage = (event) => {
         try {
           const msg: SyncMessage = JSON.parse(event.data);
           this.handleIncomingMessage(msg);
@@ -106,7 +108,8 @@ class SyncService {
         }
       };
 
-      this.ws.onclose = () => {
+      socket.onclose = () => {
+        if (this.ws !== socket) return;
         this.isConnected = false;
         this.ws = null;
         if (this.shouldReconnect) {
@@ -117,7 +120,8 @@ class SyncService {
         }
       };
 
-      this.ws.onerror = (err) => {
+      socket.onerror = (err) => {
+        if (this.ws !== socket) return;
         console.warn('[SyncService] WebSocket error, will reconnect', err);
         this.isConnected = false;
         if (this.shouldReconnect) this.setStatus('connecting');

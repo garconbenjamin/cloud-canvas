@@ -374,6 +374,36 @@ export default function App() {
     const unsubPresence = syncService.onPresence((users) => {
       setOnlinePresences(users);
     });
+    const unsubCursor = syncService.onCursor(({ sender, cursor, selectedNodeIds, isDragging }) => {
+      setOnlinePresences((prev) => {
+        const existing = prev.find((user) => user.id === sender.id);
+
+        if (!existing) {
+          return [
+            ...prev,
+            {
+              ...sender,
+              cursor,
+              selectedNodeIds,
+              isDragging,
+              lastActive: Date.now(),
+            },
+          ];
+        }
+
+        return prev.map((user) =>
+          user === existing
+            ? {
+                ...user,
+                cursor,
+                selectedNodeIds,
+                isDragging,
+                lastActive: Date.now(),
+              }
+            : user,
+        );
+      });
+    });
     const unsubStatus = syncService.onStatus(setSyncStatus);
 
     return () => {
@@ -384,6 +414,7 @@ export default function App() {
       unsubBatchDelete();
       unsubFull();
       unsubPresence();
+      unsubCursor();
       unsubStatus();
       syncService.disconnect();
     };
