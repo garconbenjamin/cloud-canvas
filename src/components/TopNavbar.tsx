@@ -1,6 +1,5 @@
 import {
   Download,
-  ExternalLink,
   FilePlus2,
   LayoutDashboard,
   RotateCcw,
@@ -65,13 +64,6 @@ export const TopNavbar: FC<TopNavbarProps> = ({
   const handleTitleCancel = () => {
     setTitleInput(boardTitle);
     setIsEditingTitle(false);
-  };
-
-  const handleOpenSecondWindow = () => {
-    // Open current URL in a new window/tab to simulate peer collaboration
-    if (typeof window !== 'undefined') {
-      window.open(window.location.href, '_blank');
-    }
   };
 
   return (
