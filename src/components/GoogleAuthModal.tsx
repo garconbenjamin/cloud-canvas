@@ -120,7 +120,7 @@ export const GoogleAuthModal: FC<GoogleAuthModalProps> = ({
           locale: 'zh_TW',
         });
       } catch {
-        setAuthError('Google 登入初始化失敗，請確認 Client ID 與允許的網域。');
+        setAuthError('Google 登入暫時無法使用，請稍後再試或聯絡管理員。');
       }
     };
 
@@ -175,8 +175,8 @@ export const GoogleAuthModal: FC<GoogleAuthModalProps> = ({
               </svg>
             </div>
             <div>
-              <h3 className="font-semibold text-white text-base">Google 帳號與協作者身份</h3>
-              <p className="text-xs text-neutral-400">所有新建與修改節點將標記建立者</p>
+              <h3 className="font-semibold text-white text-base">Google 帳號</h3>
+              <p className="text-xs text-neutral-400">用於顯示建立者與協作者身份</p>
             </div>
           </div>
           <button
@@ -232,8 +232,7 @@ export const GoogleAuthModal: FC<GoogleAuthModalProps> = ({
           </div>
         ) : (
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
-            尚未設定 Google OAuth Client ID。請設定 <code>GOOGLE_CLIENT_ID</code>（本機亦可使用{' '}
-            <code>VITE_GOOGLE_CLIENT_ID</code>）。
+            Google 登入尚未設定完成，請稍後再試或聯絡管理員。
           </div>
         )}
 
@@ -241,7 +240,7 @@ export const GoogleAuthModal: FC<GoogleAuthModalProps> = ({
         {!googleOnly && import.meta.env.DEV && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs text-neutral-400">
-              <span className="font-semibold">快速切換測試身份（測試多人同步）</span>
+              <span className="font-semibold">快速切換協作者</span>
               <span className="text-[11px] text-indigo-400">一鍵切換游標</span>
             </div>
 
@@ -294,11 +293,11 @@ export const GoogleAuthModal: FC<GoogleAuthModalProps> = ({
             onSubmit={handleCreateCustom}
             className="pt-2 border-t border-neutral-800 space-y-2.5 text-xs"
           >
-            <span className="font-semibold text-neutral-400">或自訂 Google 協作者名稱</span>
+            <span className="font-semibold text-neutral-400">或自訂協作者名稱</span>
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="名稱 (例如: Kevin Google)"
+                placeholder="名稱"
                 value={customName}
                 onChange={(e) => setCustomName(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-xl bg-neutral-950/60 border border-neutral-800 outline-none focus:border-indigo-500 text-neutral-200 text-xs"

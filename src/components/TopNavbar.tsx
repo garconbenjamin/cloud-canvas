@@ -9,7 +9,7 @@ import {
 import type { FC } from 'react';
 import { useEffect, useState } from 'react';
 
-import { Board, UserPresence, UserProfile } from '../types.ts';
+import { Board, SyncConnectionStatus, UserPresence, UserProfile } from '../types.ts';
 
 interface TopNavbarProps {
   boardId: string;
@@ -23,6 +23,7 @@ interface TopNavbarProps {
   onOpenBoard: (id: string) => void;
   onCreateBoard: () => void;
   onlineUsers: UserPresence[];
+  syncStatus: SyncConnectionStatus;
   currentUser: UserProfile;
   onOpenAuthModal: () => void;
   onResetBoard: () => void;
@@ -40,6 +41,7 @@ export const TopNavbar: FC<TopNavbarProps> = ({
   onOpenBoard,
   onCreateBoard,
   onlineUsers,
+  syncStatus,
   currentUser,
   onOpenAuthModal,
   onResetBoard,
@@ -71,6 +73,15 @@ export const TopNavbar: FC<TopNavbarProps> = ({
     setDidCopyShareLink(true);
     window.setTimeout(() => setDidCopyShareLink(false), 1600);
   };
+
+  const syncStatusLabel =
+    syncStatus === 'connected' ? '已連線' : syncStatus === 'connecting' ? '連線中' : '離線';
+  const syncStatusClass =
+    syncStatus === 'connected'
+      ? 'bg-emerald-400 shadow-emerald-400/40'
+      : syncStatus === 'connecting'
+        ? 'bg-amber-400 shadow-amber-400/40 animate-pulse'
+        : 'bg-neutral-500 shadow-neutral-500/30';
 
   return (
     <header
@@ -173,20 +184,34 @@ export const TopNavbar: FC<TopNavbarProps> = ({
             </button>
           </div>
         ) : canEditBoardTitle ? (
-          <button
-            onClick={() => setIsEditingTitle(true)}
-            className="text-xs font-semibold text-neutral-300 hover:text-white px-2 py-1 rounded hover:bg-neutral-800/80 transition-colors truncate max-w-[180px]"
-            title="點擊修改畫布名稱"
-          >
-            {boardTitle}
-          </button>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <button
+              onClick={() => setIsEditingTitle(true)}
+              className="text-xs font-semibold text-neutral-300 hover:text-white px-2 py-1 rounded hover:bg-neutral-800/80 transition-colors truncate max-w-[180px]"
+              title="點擊修改畫布名稱"
+            >
+              {boardTitle}
+            </button>
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px] ${syncStatusClass}`}
+              title={`同步狀態：${syncStatusLabel}`}
+              aria-label={`同步狀態：${syncStatusLabel}`}
+            />
+          </div>
         ) : (
-          <span
-            className="text-xs font-semibold text-neutral-300 px-2 py-1 truncate max-w-[180px]"
-            title="只有畫布建立者可以修改名稱"
-          >
-            {boardTitle}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span
+              className="text-xs font-semibold text-neutral-300 px-2 py-1 truncate max-w-[180px]"
+              title="只有畫布建立者可以修改名稱"
+            >
+              {boardTitle}
+            </span>
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px] ${syncStatusClass}`}
+              title={`同步狀態：${syncStatusLabel}`}
+              aria-label={`同步狀態：${syncStatusLabel}`}
+            />
+          </div>
         )}
 
         <span
@@ -194,23 +219,12 @@ export const TopNavbar: FC<TopNavbarProps> = ({
           title="畫布建立者"
         >
           <ShieldCheck className="w-3 h-3 text-indigo-400" />
-          Owner: <span className="text-neutral-300 max-w-[120px] truncate">{boardOwnerName}</span>
+          建立者：<span className="text-neutral-300 max-w-[120px] truncate">{boardOwnerName}</span>
         </span>
       </div>
 
       {/* Center / Right Controls */}
       <div className="flex items-center gap-2">
-        {/* Open in Second Tab Button (Awesome for testing real-time sync!) */}
-        {/* <button
-          id="btn-multi-tab-test"
-          onClick={handleOpenSecondWindow}
-          title="開啟新分頁，將兩個視窗並排即可測試即時多人游標與拖曳同步！"
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-800/90 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition-all hover:scale-[1.02]"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-          <span>開雙視窗測同步</span>
-        </button> */}
-
         {/* Live Active Peers List */}
         <div className="flex items-center -space-x-1.5 px-2 py-1 rounded-xl bg-neutral-950/60 border border-neutral-800">
           {Array.from(new Map<string, UserPresence>(onlineUsers.map((u) => [u.id, u])).values())

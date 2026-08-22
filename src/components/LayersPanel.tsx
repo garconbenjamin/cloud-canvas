@@ -63,9 +63,9 @@ export const LayersPanel: FC<LayersPanelProps> = ({
     }
     switch (node.type) {
       case 'rectangle':
-        return '矩形節點';
+        return '矩形';
       case 'circle':
-        return '圓形節點';
+        return '圓形';
       case 'text':
         return '文字標籤';
       case 'sticky':
@@ -73,7 +73,7 @@ export const LayersPanel: FC<LayersPanelProps> = ({
       case 'arrow':
         return '連接箭頭';
       case 'image':
-        return 'R2 圖片';
+        return '圖片';
     }
   };
 
@@ -132,7 +132,7 @@ export const LayersPanel: FC<LayersPanelProps> = ({
       <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {filteredNodes.length === 0 ? (
           <div className="p-4 text-center text-neutral-500 text-[11px]">
-            {nodes.length === 0 ? '畫布為空，使用工具列新增' : '無符合的圖層'}
+            {nodes.length === 0 ? '畫布是空的，請從工具列新增內容' : '沒有符合的圖層'}
           </div>
         ) : (
           filteredNodes.map((node) => {

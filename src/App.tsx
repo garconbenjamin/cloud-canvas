@@ -12,6 +12,7 @@ import {
   Board,
   CanvasNode,
   CloudflareStatus,
+  SyncConnectionStatus,
   ToolMode,
   UserPresence,
   UserProfile,
@@ -80,7 +81,7 @@ const HomeScreen: FC<{
               <input
                 value={boardId}
                 onChange={(e) => setBoardId(e.target.value)}
-                placeholder="輸入畫布 UUID"
+                placeholder="輸入分享代碼或貼上分享連結"
                 className="flex-1 rounded-xl bg-neutral-950 border border-neutral-700 px-3 py-2 outline-none focus:border-indigo-500"
               />
               <button
@@ -88,12 +89,12 @@ const HomeScreen: FC<{
                 onClick={() => onOpen(boardId.trim())}
                 className="rounded-xl border border-neutral-700 px-4 disabled:opacity-40"
               >
-                載入畫布
+                開啟
               </button>
             </div>
             {boards.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-neutral-400">我的舊畫布</p>
+                <p className="text-xs text-neutral-400">我的畫布</p>
                 {boards.map((board) => (
                   <button
                     key={board.id}
@@ -106,7 +107,7 @@ const HomeScreen: FC<{
                 ))}
               </div>
             )}
-            <p className="text-xs text-neutral-500">可透過分享連結或已建立的畫布 UUID 開啟畫布。</p>
+            <p className="text-xs text-neutral-500">只有已建立的畫布可以開啟；請使用分享連結或分享代碼。</p>
           </div>
         )}
       </div>
@@ -155,6 +156,7 @@ export default function App() {
   });
 
   const [onlinePresences, setOnlinePresences] = useState<UserPresence[]>([]);
+  const [syncStatus, setSyncStatus] = useState<SyncConnectionStatus>('disconnected');
   const [cloudflareStatus, setCloudflareStatus] = useState<CloudflareStatus | null>(null);
 
   // Modals & Panels UI State
@@ -168,19 +170,28 @@ export default function App() {
   const [isCheckingBoard, setIsCheckingBoard] = useState(Boolean(routeBoardId));
 
   const openBoard = useCallback(async (id: string) => {
-    const nextBoardId = id.trim();
+    const rawBoardInput = id.trim();
+    const nextBoardId = (() => {
+      try {
+        const url = new URL(rawBoardInput);
+        const [resource, routeId] = url.pathname.split('/').filter(Boolean);
+        return resource === 'board' && routeId ? routeId : rawBoardInput;
+      } catch {
+        return rawBoardInput;
+      }
+    })();
     if (!nextBoardId) return;
     try {
       const res = await fetch(`/api/board/${encodeURIComponent(nextBoardId)}`);
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error('找不到此畫布，請確認分享連結或 UUID');
+      if (!res.ok || !data.success) throw new Error('找不到此畫布，請確認分享連結或分享代碼');
       window.history.pushState({}, '', `/board/${nextBoardId}`);
       setRouteBoardId(nextBoardId);
       setBoardTitle(data.board.title);
       setBoardOwnerId(data.board.ownerId || '');
       setHomeError('');
     } catch (error) {
-      setHomeError(error instanceof Error ? error.message : '找不到此畫布，請確認分享連結或 UUID');
+      setHomeError(error instanceof Error ? error.message : '找不到此畫布，請確認分享連結或分享代碼');
       window.history.pushState({}, '', '/');
       setRouteBoardId(null);
     }
@@ -363,6 +374,7 @@ export default function App() {
     const unsubPresence = syncService.onPresence((users) => {
       setOnlinePresences(users);
     });
+    const unsubStatus = syncService.onStatus(setSyncStatus);
 
     return () => {
       unsubCreate();
@@ -372,6 +384,7 @@ export default function App() {
       unsubBatchDelete();
       unsubFull();
       unsubPresence();
+      unsubStatus();
       syncService.disconnect();
     };
   }, [routeBoardId, boardId, currentUser, isCheckingBoard]);
@@ -818,7 +831,7 @@ export default function App() {
         onUpdateBoardTitle={handleUpdateBoardTitle}
         canEditBoardTitle={currentUser.id === boardOwnerId}
         boardOwnerName={
-          currentUser.id === boardOwnerId ? currentUser.name : boardOwnerId || '未知使用者'
+          currentUser.id === boardOwnerId ? currentUser.name : boardOwnerId || '尚未載入'
         }
         boards={boards}
         boardListError={boardListError}
@@ -826,6 +839,7 @@ export default function App() {
         onOpenBoard={openBoard}
         onCreateBoard={handleCreateBoard}
         onlineUsers={onlinePresences}
+        syncStatus={syncStatus}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onResetBoard={handleResetBoard}

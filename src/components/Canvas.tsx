@@ -950,9 +950,9 @@ export const Canvas: FC<CanvasProps> = ({
               />
             </svg>
           </div>
-          <h2 className="text-xl font-bold">放開以立即上傳至 Cloudflare R2</h2>
+          <h2 className="text-xl font-bold">放開以上傳圖片</h2>
           <p className="text-sm text-indigo-300 mt-1">
-            圖片將自動儲存至 R2 並由 Cloudflare D1 同步至所有協作者
+            圖片會自動儲存並同步給所有協作者
           </p>
         </div>
       )}

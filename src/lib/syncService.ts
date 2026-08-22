@@ -1,4 +1,10 @@
-import { CanvasNode, SyncMessage, UserPresence, UserProfile } from '../types.ts';
+import {
+  CanvasNode,
+  SyncConnectionStatus,
+  SyncMessage,
+  UserPresence,
+  UserProfile,
+} from '../types.ts';
 
 type SyncCallback<T> = (data: T) => void;
 
@@ -8,7 +14,10 @@ class SyncService {
   private boardId: string = 'default';
   private currentUser: UserProfile | null = null;
   private isConnected: boolean = false;
+  private status: SyncConnectionStatus = 'disconnected';
+  private shouldReconnect: boolean = false;
   private reconnectTimer: any = null;
+  private reconnectAttempts: number = 0;
   private lastCursorSendTime: number = 0;
   private pendingCursorMsg: any = null;
 
@@ -33,7 +42,7 @@ class SyncService {
   private reactionListeners: Set<
     SyncCallback<{ sender: UserProfile; emoji: string; x: number; y: number }>
   > = new Set();
-  private statusListeners: Set<SyncCallback<boolean>> = new Set();
+  private statusListeners: Set<SyncCallback<SyncConnectionStatus>> = new Set();
 
   constructor() {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -47,6 +56,7 @@ class SyncService {
   public connect(boardId: string, user: UserProfile) {
     this.boardId = boardId;
     this.currentUser = user;
+    this.shouldReconnect = true;
 
     if (this.ws) {
       try {
@@ -74,11 +84,13 @@ class SyncService {
     const wsUrl = `${protocol}//${wsHost}/ws?${params.toString()}`;
 
     try {
+      this.setStatus('connecting');
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         this.isConnected = true;
-        this.notifyStatus(true);
+        this.reconnectAttempts = 0;
+        this.setStatus('connected');
         if (this.reconnectTimer) {
           clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
@@ -96,14 +108,19 @@ class SyncService {
 
       this.ws.onclose = () => {
         this.isConnected = false;
-        this.notifyStatus(false);
-        this.scheduleReconnect();
+        this.ws = null;
+        if (this.shouldReconnect) {
+          this.setStatus('connecting');
+          this.scheduleReconnect();
+        } else {
+          this.setStatus('disconnected');
+        }
       };
 
       this.ws.onerror = (err) => {
         console.warn('[SyncService] WebSocket error, will reconnect', err);
         this.isConnected = false;
-        this.notifyStatus(false);
+        if (this.shouldReconnect) this.setStatus('connecting');
       };
     } catch (err) {
       console.warn('[SyncService] Could not establish WebSocket', err);
@@ -122,13 +139,16 @@ class SyncService {
   }
 
   private scheduleReconnect() {
+    if (!this.shouldReconnect) return;
     if (this.reconnectTimer) return;
+    const delay = Math.min(30000, 1000 * 2 ** this.reconnectAttempts);
+    this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
-      if (this.currentUser) {
+      if (this.currentUser && this.shouldReconnect) {
         this.connect(this.boardId, this.currentUser);
       }
-    }, 2500);
+    }, delay);
   }
 
   private send(msg: SyncMessage, sendToBroadcastChannel: boolean = true) {
@@ -359,21 +379,30 @@ class SyncService {
     return () => this.reactionListeners.delete(cb);
   }
 
-  public onStatus(cb: SyncCallback<boolean>) {
+  public onStatus(cb: SyncCallback<SyncConnectionStatus>) {
     this.statusListeners.add(cb);
-    cb(this.isConnected);
+    cb(this.status);
     return () => this.statusListeners.delete(cb);
   }
 
-  private notifyStatus(connected: boolean) {
-    this.statusListeners.forEach((fn) => fn(connected));
+  private setStatus(status: SyncConnectionStatus) {
+    this.status = status;
+    this.statusListeners.forEach((fn) => fn(status));
   }
 
   public disconnect() {
+    this.shouldReconnect = false;
+    this.reconnectAttempts = 0;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
+    this.isConnected = false;
+    this.setStatus('disconnected');
   }
 }
 

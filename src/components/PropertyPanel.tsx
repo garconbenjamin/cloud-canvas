@@ -64,7 +64,7 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
 
   const hoverToggle = (
     <label className="flex items-center justify-between gap-2 text-[11px] text-neutral-400 cursor-pointer">
-      <span>選取模式顯示 hover 資訊</span>
+      <span>選取時顯示提示資訊</span>
       <input type="checkbox" checked={showHoverInfo} onChange={onToggleHoverInfo} />
     </label>
   );
@@ -77,7 +77,7 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
       >
         <div className="flex items-center gap-2 pb-3 border-b border-neutral-800 text-neutral-300 font-semibold">
           <Database className="w-4 h-4 text-orange-400" />
-          <span>畫布屬性 / D1 資料庫</span>
+          <span>畫布屬性</span>
           <button
             onClick={onToggleOpen}
             className="ml-auto text-neutral-500 hover:text-white"
@@ -90,32 +90,10 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
 
         <div className="mt-6 flex flex-col items-center text-center p-6 rounded-xl border border-neutral-800/80 bg-neutral-950/40">
           <Sparkles className="w-8 h-8 text-neutral-600 mb-2" />
-          <p className="font-medium text-neutral-300">尚未選取任何節點</p>
+          <p className="font-medium text-neutral-300">尚未選取任何物件</p>
           <p className="text-[11px] text-neutral-500 mt-1">
-            點擊畫布上的矩形、文字、便利貼或圖片以檢視並編輯屬性。
+            點擊畫布上的矩形、文字、便利貼或圖片以檢視並編輯。
           </p>
-        </div>
-
-        {/* Shortcuts quick reference */}
-        <div className="mt-auto pt-4 border-t border-neutral-800 space-y-2 text-[11px] text-neutral-500 font-mono">
-          <div className="flex justify-between">
-            <span>矩形 / 圓形</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">R / O</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span>文字 / 便利貼</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">T / S</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span>拖曳圖片上傳</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-orange-300">R2 Drag</kbd>
-          </div>
-          <div className="flex justify-between">
-            <span>複製 / 刪除</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-              Ctrl+D / Del
-            </kbd>
-          </div>
         </div>
       </aside>
     );
@@ -152,6 +130,23 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}`;
   };
 
+  const getNodeTypeLabel = (node: CanvasNode) => {
+    switch (node.type) {
+      case 'rectangle':
+        return '矩形';
+      case 'circle':
+        return '圓形';
+      case 'text':
+        return '文字';
+      case 'image':
+        return '圖片';
+      case 'sticky':
+        return '便利貼';
+      case 'arrow':
+        return '箭頭';
+    }
+  };
+
   return (
     <aside
       id="property-panel"
@@ -161,7 +156,7 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
       <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
         <div className="flex items-center gap-2 font-semibold">
           <span className="capitalize px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-            {isMultiple ? `${selectedNodes.length} 個節點` : primaryNode.type}
+            {isMultiple ? `${selectedNodes.length} 個物件` : getNodeTypeLabel(primaryNode)}
           </span>
           <span className="text-neutral-400 font-mono text-[11px]">
             #{primaryNode.id.slice(0, 8)}
@@ -179,14 +174,14 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
           </button>
           <button
             onClick={onDuplicateSelected}
-            title="複製節點 (Ctrl+D)"
+            title="複製物件 (Ctrl+D)"
             className="p-1.5 rounded hover:bg-neutral-800 text-neutral-400 hover:text-white"
           >
             <Copy className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={onDeleteSelected}
-            title="刪除節點 (Delete)"
+            title="刪除物件 (Delete)"
             className="p-1.5 rounded hover:bg-neutral-800 text-rose-400 hover:text-rose-300"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -385,12 +380,12 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
         <div className="space-y-2 pt-2 border-t border-neutral-800 p-3 rounded-xl bg-orange-950/20 border border-orange-800/30">
           <div className="flex items-center gap-1.5 text-orange-400 font-semibold">
             <Cloud className="w-4 h-4" />
-            <span>Cloudflare R2 物件資訊</span>
+            <span>圖片資訊</span>
           </div>
           <div className="space-y-1 font-mono text-[11px] text-neutral-300">
             <div className="flex justify-between">
-              <span className="text-neutral-500">存儲桶:</span>
-              <span className="text-orange-300">{primaryNode.r2Bucket || 'canvas-assets'}</span>
+              <span className="text-neutral-500">儲存位置:</span>
+              <span className="text-orange-300">雲端圖片庫</span>
             </div>
             {primaryNode.fileSize && (
               <div className="flex justify-between">
@@ -399,8 +394,8 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-neutral-500">持久化狀態:</span>
-              <span className="text-emerald-400 font-medium">已同步至 D1 & R2</span>
+              <span className="text-neutral-500">狀態:</span>
+              <span className="text-emerald-400 font-medium">已同步</span>
             </div>
           </div>
         </div>
@@ -447,7 +442,7 @@ export const PropertyPanel: FC<PropertyPanelProps> = ({
       <div className="mt-auto pt-3 border-t border-neutral-800 text-[11px] text-neutral-400 space-y-1.5">
         <div className="flex items-center gap-1.5">
           <Database className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Cloudflare D1 記錄節點</span>
+          <span>變更紀錄</span>
         </div>
 
         {primaryNode.createdBy && (

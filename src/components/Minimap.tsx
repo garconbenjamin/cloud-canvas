@@ -128,7 +128,7 @@ export const Minimap: FC<MinimapProps> = ({
         onMouseDown={handleDragStart}
         title="拖曳移動小地圖"
       >
-        <span>MINIMAP</span>
+        <span>小地圖</span>
         <button onClick={() => setIsExpanded(false)} className="hover:text-white">
           ✕
         </button>

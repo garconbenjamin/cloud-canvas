@@ -92,12 +92,12 @@ export const Toolbar: FC<ToolbarProps> = ({
         <button
           id="tool-btn-upload-image"
           onClick={onTriggerImageUpload}
-          title="上傳圖片至 Cloudflare R2 (I)"
+          title="上傳圖片 (I)"
           className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-neutral-800 hover:text-white transition-all text-neutral-300 relative group"
         >
           <ImageIcon className="w-4 h-4 text-orange-400" />
           <span className="absolute -top-8 px-2 py-0.5 rounded bg-black/80 text-[10px] text-orange-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-            上傳圖片 (R2)
+            上傳圖片
           </span>
         </button>
 

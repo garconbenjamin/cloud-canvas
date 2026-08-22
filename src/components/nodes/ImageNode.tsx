@@ -30,7 +30,7 @@ export const ImageNode: FC<ImageNodeProps> = ({ node, isSelected }) => {
       {isLoading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900 text-neutral-400 gap-2">
           <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-          <span className="text-xs">從 R2 載入圖片中...</span>
+          <span className="text-xs">圖片載入中...</span>
         </div>
       )}
 
@@ -59,7 +59,7 @@ export const ImageNode: FC<ImageNodeProps> = ({ node, isSelected }) => {
       {/* Cloudflare R2 / Storage Badge */}
       <div className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/70 backdrop-blur-md text-[10px] font-mono text-neutral-300 opacity-0 group-hover:opacity-100 transition-opacity border border-white/10 pointer-events-none">
         <Cloud className="w-3 h-3 text-orange-400" />
-        <span>{node.r2Bucket ? `R2: ${node.r2Bucket}` : 'Cloudflare R2'}</span>
+        <span>雲端圖片</span>
       </div>
 
       {node.text && (

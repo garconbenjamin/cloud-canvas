@@ -85,6 +85,8 @@ export interface UserPresence {
   };
 }
 
+export type SyncConnectionStatus = 'connecting' | 'connected' | 'disconnected';
+
 export interface SyncMessage {
   type:
     | 'join'
