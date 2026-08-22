@@ -106,7 +106,7 @@ const HomeScreen: FC<{
                 ))}
               </div>
             )}
-            <p className="text-xs text-neutral-500">可透過分享連結或 6 碼畫布 ID 開啟他人畫布。</p>
+            <p className="text-xs text-neutral-500">可透過分享連結或已建立的畫布 UUID 開啟畫布。</p>
           </div>
         )}
       </div>
@@ -165,17 +165,29 @@ export default function App() {
   const [homeError, setHomeError] = useState('');
   const [boards, setBoards] = useState<Board[]>([]);
   const [boardListError, setBoardListError] = useState('');
+  const [isCheckingBoard, setIsCheckingBoard] = useState(Boolean(routeBoardId));
 
-  const openBoard = useCallback((id: string) => {
-    window.history.pushState({}, '', `/board/${id}`);
-    setRouteBoardId(id);
+  const openBoard = useCallback(async (id: string) => {
+    const nextBoardId = id.trim();
+    if (!nextBoardId) return;
+    try {
+      const res = await fetch(`/api/board/${encodeURIComponent(nextBoardId)}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error('找不到此畫布，請確認分享連結或 UUID');
+      window.history.pushState({}, '', `/board/${nextBoardId}`);
+      setRouteBoardId(nextBoardId);
+      setBoardTitle(data.board.title);
+      setBoardOwnerId(data.board.ownerId || '');
+      setHomeError('');
+    } catch (error) {
+      setHomeError(error instanceof Error ? error.message : '找不到此畫布，請確認分享連結或 UUID');
+      window.history.pushState({}, '', '/');
+      setRouteBoardId(null);
+    }
   }, []);
 
   const createBoardId = () => {
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-    const values = new Uint32Array(6);
-    crypto.getRandomValues(values);
-    return Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+    return crypto.randomUUID();
   };
 
   const loadBoards = useCallback(async () => {
@@ -204,7 +216,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || '建立畫布失敗');
       setBoards((prev) => [data.board, ...prev.filter((board) => board.id !== data.board.id)]);
-      openBoard(id);
+      await openBoard(id);
     } catch (error) {
       const message = error instanceof Error ? error.message : '建立畫布失敗';
       setHomeError(message);
@@ -215,6 +227,35 @@ export default function App() {
   useEffect(() => {
     loadBoards();
   }, [loadBoards]);
+
+  useEffect(() => {
+    const validateRouteBoard = async () => {
+      if (!routeBoardId) {
+        setIsCheckingBoard(false);
+        return;
+      }
+
+      setIsCheckingBoard(true);
+      try {
+        const res = await fetch(`/api/board/${encodeURIComponent(routeBoardId)}`);
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error('找不到此畫布，請從已建立的分享連結進入');
+        setBoardTitle(data.board.title);
+        setBoardOwnerId(data.board.ownerId || '');
+        setHomeError('');
+      } catch (error) {
+        setHomeError(error instanceof Error ? error.message : '找不到此畫布，請從已建立的分享連結進入');
+        window.history.replaceState({}, '', '/');
+        setRouteBoardId(null);
+        setNodes([]);
+        setSelectedNodeIds([]);
+      } finally {
+        setIsCheckingBoard(false);
+      }
+    };
+
+    validateRouteBoard();
+  }, [routeBoardId]);
 
   // Undo / Redo History Stack
   const [history, setHistory] = useState<CanvasNode[][]>([]);
@@ -228,7 +269,7 @@ export default function App() {
   // 1. Initial Data Fetch from Cloudflare D1 API
   useEffect(() => {
     const fetchBoardData = async () => {
-      if (!routeBoardId) return;
+      if (!routeBoardId || isCheckingBoard) return;
       try {
         const res = await fetch(`/api/board/${boardId}/nodes`);
         const data = await res.json();
@@ -265,10 +306,10 @@ export default function App() {
 
     const interval = setInterval(fetchConfig, 10000);
     return () => clearInterval(interval);
-  }, [routeBoardId, boardId]);
+  }, [routeBoardId, boardId, isCheckingBoard]);
 
   useEffect(() => {
-    if (!routeBoardId) return;
+    if (!routeBoardId || isCheckingBoard) return;
     fetch(`/api/board/${routeBoardId}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -278,11 +319,11 @@ export default function App() {
         }
       })
       .catch(() => {});
-  }, [routeBoardId]);
+  }, [routeBoardId, isCheckingBoard]);
 
   // 2. Setup Real-time WebSocket & Broadcast Sync
   useEffect(() => {
-    if (!routeBoardId) return;
+    if (!routeBoardId || isCheckingBoard) return;
     syncService.connect(boardId, currentUser);
 
     const unsubCreate = syncService.onNodeCreate((newNode) => {
@@ -333,7 +374,7 @@ export default function App() {
       unsubPresence();
       syncService.disconnect();
     };
-  }, [routeBoardId, boardId, currentUser]);
+  }, [routeBoardId, boardId, currentUser, isCheckingBoard]);
 
   // Persist user changes to localStorage
   const handleSelectUser = useCallback((user: UserProfile) => {
@@ -722,25 +763,8 @@ export default function App() {
     if (data.success) setBoardTitle(data.board.title);
   };
 
-  // Export Canvas
-  const handleExportCanvas = (format: 'png' | 'svg' | 'json') => {
-    if (format === 'json') {
-      const json = JSON.stringify(nodes, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `cloudcanvas-${boardId}-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } else {
-      // SVG or PNG quick download
-      window.print();
-    }
-  };
-
   const isAuthenticated = currentUser.id.startsWith('google_');
-  if (!isAuthenticated || !routeBoardId) {
+  if (!isAuthenticated || !routeBoardId || isCheckingBoard) {
     return (
       <>
         <HomeScreen
@@ -749,7 +773,7 @@ export default function App() {
           onLogin={() => setIsAuthModalOpen(true)}
           onCreate={handleCreateBoard}
           onOpen={openBoard}
-          error={homeError}
+          error={isCheckingBoard ? '正在確認畫布...' : homeError}
         />
         <GoogleAuthModal
           isOpen={isAuthModalOpen}
@@ -805,7 +829,6 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onResetBoard={handleResetBoard}
-        onExportCanvas={handleExportCanvas}
       />
 
       {/* Main Workspace (Canvas + Sidebars) */}

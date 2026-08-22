@@ -12,6 +12,14 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const board = await env.DB.prepare('SELECT id FROM boards WHERE id = ?').bind(boardId).first();
+  if (!board) {
+    return new Response(JSON.stringify({ success: false, error: 'Board not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
+
   if (request.method === 'GET') {
     const { results } = await env.DB.prepare(
       'SELECT * FROM nodes WHERE board_id = ? ORDER BY z_index ASC',

@@ -1,8 +1,9 @@
 import {
-  Download,
+  Check,
   FilePlus2,
   LayoutDashboard,
   RotateCcw,
+  Share2,
   ShieldCheck,
 } from 'lucide-react';
 import type { FC } from 'react';
@@ -25,7 +26,6 @@ interface TopNavbarProps {
   currentUser: UserProfile;
   onOpenAuthModal: () => void;
   onResetBoard: () => void;
-  onExportCanvas: (format: 'png' | 'svg' | 'json') => void;
 }
 
 export const TopNavbar: FC<TopNavbarProps> = ({
@@ -43,12 +43,11 @@ export const TopNavbar: FC<TopNavbarProps> = ({
   currentUser,
   onOpenAuthModal,
   onResetBoard,
-  onExportCanvas,
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState(boardTitle);
-  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showBoardsMenu, setShowBoardsMenu] = useState(false);
+  const [didCopyShareLink, setDidCopyShareLink] = useState(false);
 
   useEffect(() => {
     setTitleInput(boardTitle);
@@ -64,6 +63,13 @@ export const TopNavbar: FC<TopNavbarProps> = ({
   const handleTitleCancel = () => {
     setTitleInput(boardTitle);
     setIsEditingTitle(false);
+  };
+
+  const handleShareBoard = async () => {
+    const shareUrl = `${window.location.origin}/board/${boardId}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setDidCopyShareLink(true);
+    window.setTimeout(() => setDidCopyShareLink(false), 1600);
   };
 
   return (
@@ -234,60 +240,28 @@ export const TopNavbar: FC<TopNavbarProps> = ({
           )}
         </div>
 
-        {/* Export Canvas Dropdown */}
-        <div className="relative">
-          <button
-            id="btn-export-menu"
-            onClick={() => setShowExportMenu(!showExportMenu)}
-            title="匯出畫布"
-            className="p-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-
-          {showExportMenu && (
-            <div className="absolute right-0 mt-2 w-44 p-1.5 rounded-xl bg-neutral-900 border border-neutral-800 shadow-2xl backdrop-blur-xl flex flex-col gap-1 text-xs z-50">
-              <button
-                onClick={() => {
-                  onExportCanvas('png');
-                  setShowExportMenu(false);
-                }}
-                className="px-2.5 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                🖼️ 匯出為 PNG 圖片
-              </button>
-              <button
-                onClick={() => {
-                  onExportCanvas('svg');
-                  setShowExportMenu(false);
-                }}
-                className="px-2.5 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                📐 匯出為 SVG 向量
-              </button>
-              <button
-                onClick={() => {
-                  onExportCanvas('json');
-                  setShowExportMenu(false);
-                }}
-                className="px-2.5 py-1.5 rounded-lg text-left hover:bg-neutral-800 text-neutral-200"
-              >
-                💾 匯出為 D1 JSON
-              </button>
-              <div className="h-[1px] bg-neutral-800 my-0.5" />
-              <button
-                onClick={() => {
-                  onResetBoard();
-                  setShowExportMenu(false);
-                }}
-                className="px-2.5 py-1.5 rounded-lg text-left hover:bg-rose-950/40 text-rose-400"
-              >
-                <RotateCcw className="w-3 h-3 inline mr-1" />
-                重設為預設畫布
-              </button>
-            </div>
+        <button
+          id="btn-share-board"
+          onClick={handleShareBoard}
+          title="複製分享連結"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors text-xs"
+        >
+          {didCopyShareLink ? (
+            <Check className="w-4 h-4 text-emerald-400" />
+          ) : (
+            <Share2 className="w-4 h-4" />
           )}
-        </div>
+          <span className="hidden sm:inline">{didCopyShareLink ? '已複製' : '分享'}</span>
+        </button>
+
+        <button
+          id="btn-reset-board"
+          onClick={onResetBoard}
+          title="重設為空白畫布"
+          className="p-2 rounded-xl bg-neutral-800 hover:bg-rose-950/40 text-neutral-300 hover:text-rose-300 transition-colors"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
 
         {/* Google User Avatar / Persona Button */}
         <button

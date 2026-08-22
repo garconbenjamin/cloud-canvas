@@ -39,11 +39,25 @@ export async function onRequest(context) {
       status: 400,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
+
+  if (!isUuid(id))
+    return new Response(JSON.stringify({ success: false, error: 'id must be a UUID' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+
   try {
     await env.DB.prepare("ALTER TABLE boards ADD COLUMN owner_id TEXT NOT NULL DEFAULT ''").run();
   } catch {
     // Column already exists on databases initialized with the latest schema.
   }
+  const existingBoard = await env.DB.prepare('SELECT id FROM boards WHERE id = ?').bind(id).first();
+  if (existingBoard)
+    return new Response(JSON.stringify({ success: false, error: 'Board already exists' }), {
+      status: 409,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+
   const now = Date.now();
   await env.DB.prepare(
     'INSERT INTO boards (id, title, owner_id, created_at, updated_at, node_count) VALUES (?, ?, ?, ?, ?, 0)',
@@ -64,5 +78,11 @@ export async function onRequest(context) {
       },
     }),
     { headers: { 'Content-Type': 'application/json', ...corsHeaders } },
+  );
+}
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
   );
 }

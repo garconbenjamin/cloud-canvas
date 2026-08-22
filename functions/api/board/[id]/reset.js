@@ -12,6 +12,14 @@ export async function onRequest(context) {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const board = await env.DB.prepare('SELECT id FROM boards WHERE id = ?').bind(boardId).first();
+  if (!board) {
+    return new Response(JSON.stringify({ success: false, error: 'Board not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    });
+  }
+
   if (request.method === 'POST') {
     // Delete all nodes for this board
     await env.DB.prepare('DELETE FROM nodes WHERE board_id = ?').bind(boardId).run();
