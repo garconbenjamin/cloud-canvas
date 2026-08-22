@@ -3,24 +3,56 @@
  * Handles WebSocket connections for real-time collaboration
  */
 
-export class BoardSync {
-  constructor(state, env) {
-    this.state = state;
-    this.env = env;
-    this.sessions = new Map();
-    this.boardId = '';
+interface Env {
+  BOARD_SYNC: DurableObjectNamespace;
+}
+
+interface PresenceUser {
+  id: string;
+  connectionId: string;
+  name: string;
+  email: string;
+  avatar: string;
+  color: string;
+  cursor: { x: number; y: number } | null;
+  selectedNodeIds: string[];
+  isDragging?: boolean;
+  lastActive: number;
+}
+
+interface Session {
+  ws: WebSocket;
+  user: PresenceUser;
+  boardId: string;
+}
+
+interface SyncMessage {
+  type: string;
+  sender?: Partial<PresenceUser>;
+  payload?: {
+    cursor?: PresenceUser['cursor'];
+    selectedNodeIds?: string[];
+    isDragging?: boolean;
+    users?: PresenceUser[];
+  };
+}
+
+export class BoardSync extends DurableObject<Env> {
+  private sessions = new Map<WebSocket, Session>();
+  private boardId = '';
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
   }
 
-  async fetch(request) {
+  async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.headers.get('Upgrade') === 'websocket') {
       this.boardId = url.searchParams.get('boardId') || 'default';
-      const userId =
-        url.searchParams.get('userId') || `guest_${Math.random().toString(36).slice(2, 8)}`;
+      const userId = url.searchParams.get('userId') || `guest_${crypto.randomUUID().slice(0, 8)}`;
       const connectionId =
-        url.searchParams.get('clientId') ||
-        `conn_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        url.searchParams.get('clientId') || `conn_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
       const userName = url.searchParams.get('userName') || `訪客 ${userId.slice(0, 4)}`;
       const userEmail = url.searchParams.get('userEmail') || `${userId}@user.local`;
       const userColor = url.searchParams.get('userColor') || '#6366f1';
@@ -49,7 +81,7 @@ export class BoardSync {
     return new Response('Not found', { status: 404 });
   }
 
-  async handleSession(ws, user) {
+  async handleSession(ws: WebSocket, user: PresenceUser): Promise<void> {
     ws.accept();
     this.sessions.set(ws, { ws, user, boardId: this.boardId });
 
@@ -58,7 +90,7 @@ export class BoardSync {
 
     ws.addEventListener('message', async (event) => {
       try {
-        const msg = JSON.parse(event.data);
+        const msg = JSON.parse(String(event.data)) as SyncMessage;
 
         if (msg.type === 'cursor_move') {
           const session = this.sessions.get(ws);
@@ -106,7 +138,7 @@ export class BoardSync {
     });
   }
 
-  broadcastToBoard(message, senderWs) {
+  broadcastToBoard(message: SyncMessage, senderWs: WebSocket): void {
     const data = JSON.stringify(message);
     for (const [ws, session] of this.sessions.entries()) {
       if (session.boardId === this.boardId && ws !== senderWs && ws.readyState === WebSocket.OPEN) {
@@ -115,8 +147,8 @@ export class BoardSync {
     }
   }
 
-  broadcastPresenceList() {
-    const presenceList = [];
+  broadcastPresenceList(): void {
+    const presenceList: PresenceUser[] = [];
     for (const session of this.sessions.values()) {
       if (session.boardId === this.boardId) {
         presenceList.push(session.user);
@@ -147,7 +179,7 @@ export class BoardSync {
 }
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // CORS Headers

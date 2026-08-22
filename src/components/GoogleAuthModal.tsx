@@ -1,5 +1,6 @@
 import { Check, LogOut } from 'lucide-react';
-import React from 'react';
+import type { FC, FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { DEMO_USERS } from '../lib/constants.ts';
 import { UserProfile } from '../types.ts';
@@ -43,7 +44,7 @@ interface GoogleAuthModalProps {
   googleOnly?: boolean;
 }
 
-export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
+export const GoogleAuthModal: FC<GoogleAuthModalProps> = ({
   isOpen,
   onClose,
   currentUser,
@@ -52,13 +53,13 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   googleClientId,
   googleOnly = false,
 }) => {
-  const [customName, setCustomName] = React.useState('');
-  const [customEmail, setCustomEmail] = React.useState('');
-  const [customColor, setCustomColor] = React.useState('#6366f1');
-  const [authError, setAuthError] = React.useState('');
-  const googleButtonRef = React.useRef<HTMLDivElement>(null);
+  const [customName, setCustomName] = useState('');
+  const [customEmail] = useState('');
+  const [customColor, setCustomColor] = useState('#6366f1');
+  const [authError, setAuthError] = useState('');
+  const googleButtonRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isOpen || !googleClientId) return;
 
     let attempts = 0;
@@ -128,7 +129,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleCreateCustom = (e: React.FormEvent) => {
+  const handleCreateCustom = (e: FormEvent) => {
     e.preventDefault();
     if (!customName.trim()) return;
 

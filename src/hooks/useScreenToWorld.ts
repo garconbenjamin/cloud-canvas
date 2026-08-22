@@ -1,12 +1,13 @@
-import React from 'react';
+import type { RefObject } from 'react';
+import { useCallback } from 'react';
 
 import { Viewport } from '../types.ts';
 
 export function useScreenToWorld(
-  containerRef: React.RefObject<HTMLElement | null>,
+  containerRef: RefObject<HTMLElement | null>,
   viewport: Viewport,
 ) {
-  return React.useCallback(
+  return useCallback(
     (screenX: number, screenY: number) => {
       const rect = containerRef.current?.getBoundingClientRect() || { left: 0, top: 0 };
       return {

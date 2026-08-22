@@ -1,5 +1,6 @@
 import { Cloud, Image as ImageIcon, Loader2 } from 'lucide-react';
-import React from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 
 import { CanvasNode } from '../../types.ts';
 
@@ -8,9 +9,9 @@ interface ImageNodeProps {
   isSelected: boolean;
 }
 
-export const ImageNode: React.FC<ImageNodeProps> = ({ node, isSelected }) => {
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [hasError, setHasError] = React.useState(false);
+export const ImageNode: FC<ImageNodeProps> = ({ node, isSelected }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   return (
     <div

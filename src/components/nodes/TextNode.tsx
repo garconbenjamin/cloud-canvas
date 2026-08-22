@@ -1,4 +1,5 @@
-import React from 'react';
+import type { FC } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { CanvasNode } from '../../types.ts';
 
@@ -8,16 +9,16 @@ interface TextNodeProps {
   onUpdateText?: (newText: string) => void;
 }
 
-export const TextNode: React.FC<TextNodeProps> = ({ node, isSelected, onUpdateText }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [editText, setEditText] = React.useState(node.text || '');
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+export const TextNode: FC<TextNodeProps> = ({ node, onUpdateText }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(node.text || '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditText(node.text || '');
   }, [node.text]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
       textareaRef.current.select();

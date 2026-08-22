@@ -12,7 +12,8 @@ import {
   Type,
   Unlock,
 } from 'lucide-react';
-import React from 'react';
+import type { FC } from 'react';
+import { useState } from 'react';
 
 import { CanvasNode, NodeType } from '../types.ts';
 import { PanelToggleButton } from './common/PanelToggleButton.tsx';
@@ -27,7 +28,7 @@ interface LayersPanelProps {
   onToggleOpen: () => void;
 }
 
-export const LayersPanel: React.FC<LayersPanelProps> = ({
+export const LayersPanel: FC<LayersPanelProps> = ({
   nodes,
   selectedNodeIds,
   onSelectNode,
@@ -36,7 +37,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
   isOpen,
   onToggleOpen,
 }) => {
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const getNodeIcon = (type: NodeType) => {
     switch (type) {

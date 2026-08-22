@@ -1,4 +1,5 @@
-import React from 'react';
+import type { FC, MouseEvent as ReactMouseEvent } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { CanvasNode, Viewport } from '../types.ts';
 
@@ -10,27 +11,25 @@ interface MinimapProps {
   onNavigate: (x: number, y: number) => void;
 }
 
-export const Minimap: React.FC<MinimapProps> = ({
+export const Minimap: FC<MinimapProps> = ({
   nodes,
   viewport,
   canvasWidth,
   canvasHeight,
   onNavigate,
 }) => {
-  const [isExpanded, setIsExpanded] = React.useState(true);
-  const [position, setPosition] = React.useState(() => ({
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [position, setPosition] = useState(() => ({
     right: 24,
     bottom: 24,
   }));
-  const dragRef = React.useRef<{ x: number; y: number; right: number; bottom: number } | null>(
-    null,
-  );
-  const didDragRef = React.useRef(false);
+  const dragRef = useRef<{ x: number; y: number; right: number; bottom: number } | null>(null);
+  const didDragRef = useRef(false);
   const mapWidth = 180;
   const mapHeight = 110;
 
   // Calculate bounding box of all elements
-  const bounds = React.useMemo(() => {
+  const bounds = useMemo(() => {
     if (nodes.length === 0) {
       return { minX: -500, minY: -500, maxX: 1500, maxY: 1200 };
     }
@@ -65,7 +64,7 @@ export const Minimap: React.FC<MinimapProps> = ({
   const viewW = (canvasWidth / viewport.zoom) * scale;
   const viewH = (canvasHeight / viewport.zoom) * scale;
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = (e: ReactMouseEvent<HTMLDivElement>) => {
     if (didDragRef.current) {
       didDragRef.current = false;
       return;
@@ -83,11 +82,11 @@ export const Minimap: React.FC<MinimapProps> = ({
     onNavigate(newViewportX, newViewportY);
   };
 
-  const handleDragStart = (e: React.MouseEvent) => {
+  const handleDragStart = (e: ReactMouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     dragRef.current = { x: e.clientX, y: e.clientY, ...position };
 
-    const handleDrag = (event: MouseEvent) => {
+    const handleDrag = (event: globalThis.MouseEvent) => {
       if (!dragRef.current) return;
       const dx = event.clientX - dragRef.current.x;
       const dy = event.clientY - dragRef.current.y;

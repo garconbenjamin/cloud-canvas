@@ -1,4 +1,5 @@
-import React from 'react';
+import type { DragEvent, MouseEvent, WheelEvent } from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 
 import { useScreenToWorld } from '../hooks/useScreenToWorld.ts';
 import { STICKY_COLORS } from '../lib/constants.ts';
@@ -38,7 +39,7 @@ interface CanvasProps {
 
 type ResizeHandleType = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 
-export const Canvas: React.FC<CanvasProps> = ({
+export const Canvas: FC<CanvasProps> = ({
   nodes,
   selectedNodeIds,
   onSelectNodes,
@@ -47,7 +48,6 @@ export const Canvas: React.FC<CanvasProps> = ({
   onLocalTransformNodes,
   onCommitTransformNodes,
   onCreateNode,
-  onDeleteNodes,
   currentTool,
   onToolChange,
   viewport,
@@ -58,22 +58,22 @@ export const Canvas: React.FC<CanvasProps> = ({
   onSendCursor,
   onUploadImageFile,
 }) => {
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Interaction States
-  const [isPanning, setIsPanning] = React.useState(false);
-  const [panStart, setPanStart] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isSpacePressed, setIsSpacePressed] = React.useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
 
   // Dragging nodes state
-  const [isDraggingNodes, setIsDraggingNodes] = React.useState(false);
-  const [dragStartPos, setDragStartPos] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [initialNodePositions, setInitialNodePositions] = React.useState<
+  const [isDraggingNodes, setIsDraggingNodes] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [initialNodePositions, setInitialNodePositions] = useState<
     Map<string, { x: number; y: number }>
   >(new Map());
 
   // Marquee selection state
-  const [marquee, setMarquee] = React.useState<{
+  const [marquee, setMarquee] = useState<{
     startX: number;
     startY: number;
     currentX: number;
@@ -81,8 +81,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   } | null>(null);
 
   // Resizing node state
-  const [activeResizeHandle, setActiveResizeHandle] = React.useState<ResizeHandleType | null>(null);
-  const [resizeInitial, setResizeInitial] = React.useState<{
+  const [activeResizeHandle, setActiveResizeHandle] = useState<ResizeHandleType | null>(null);
+  const [resizeInitial, setResizeInitial] = useState<{
     startX: number;
     startY: number;
     nodeId: string;
@@ -93,23 +93,23 @@ export const Canvas: React.FC<CanvasProps> = ({
     nodeType: NodeType;
   } | null>(null);
 
-  const [rotationInitial, setRotationInitial] = React.useState<{
+  const [rotationInitial, setRotationInitial] = useState<{
     nodeId: string;
     centerX: number;
     centerY: number;
     startAngle: number;
     initialRotation: number;
   } | null>(null);
-  const [isNearRotationCorner, setIsNearRotationCorner] = React.useState(false);
-  const [hoveredNodeId, setHoveredNodeId] = React.useState<string | null>(null);
+  const [isNearRotationCorner, setIsNearRotationCorner] = useState(false);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
   // Drag over state for file drop visual feedback
-  const [isDragOverFile, setIsDragOverFile] = React.useState(false);
+  const [isDragOverFile, setIsDragOverFile] = useState(false);
 
   // Convert Screen coordinates to Canvas World coordinates
   const screenToWorld = useScreenToWorld(containerRef, viewport);
 
-  const getRotationNodeAtPoint = React.useCallback(
+  const getRotationNodeAtPoint = useCallback(
     (screenX: number, screenY: number) => {
       if (selectedNodeIds.length !== 1) return null;
       const node = nodes.find((item) => item.id === selectedNodeIds[0]);
@@ -139,7 +139,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 
   // Listen to global keyboard shortcuts
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         return;
@@ -165,8 +165,8 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, []);
 
   // Global Window Mouse Move and Mouse Up Listeners for Rock-Solid Dragging and Resizing
-  React.useEffect(() => {
-    const handleWindowMouseMove = (e: MouseEvent) => {
+  useEffect(() => {
+    const handleWindowMouseMove = (e: globalThis.MouseEvent) => {
       const world = screenToWorld(e.clientX, e.clientY);
 
       // Broadcast cursor position to peers
@@ -397,7 +397,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   ]);
 
   // Wheel zoom / trackpad pan
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = (e: WheelEvent) => {
     e.preventDefault();
     if (!containerRef.current) return;
 
@@ -426,7 +426,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   // Mouse Down on Canvas Background
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: MouseEvent) => {
     // Middle click or space+click starts viewport pan
     if (e.button === 1 || isSpacePressed || currentTool === 'hand') {
       setIsPanning(true);
@@ -445,7 +445,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     const world = screenToWorld(e.clientX, e.clientY);
 
     // If a shape tool is active, create node immediately!
-    if (currentTool !== 'select' && currentTool !== 'hand') {
+    if (currentTool !== 'select') {
       handleCreateShapeAtWorld(currentTool, world.x, world.y);
       onToolChange('select');
       return;
@@ -464,7 +464,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   // Node Click / Start Drag
-  const handleNodeMouseDown = (e: React.MouseEvent, node: CanvasNode) => {
+  const handleNodeMouseDown = (e: MouseEvent, node: CanvasNode) => {
     if (node.isLocked) return;
     if (isSpacePressed || currentTool === 'hand') return;
 
@@ -501,7 +501,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   // Start Resize Handle Drag
-  const handleResizeStart = (e: React.MouseEvent, handle: ResizeHandleType, node: CanvasNode) => {
+  const handleResizeStart = (e: MouseEvent, handle: ResizeHandleType, node: CanvasNode) => {
     e.stopPropagation();
     const world = screenToWorld(e.clientX, e.clientY);
     setActiveResizeHandle(handle);
@@ -517,7 +517,7 @@ export const Canvas: React.FC<CanvasProps> = ({
     });
   };
 
-  const handleRotationStart = (e: React.MouseEvent, node: CanvasNode) => {
+  const handleRotationStart = (e: MouseEvent, node: CanvasNode) => {
     e.stopPropagation();
     const world = screenToWorld(e.clientX, e.clientY);
     const centerX = node.x + node.width / 2;
@@ -668,17 +668,17 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   // Drag & Drop Image Files handler (R2 storage)
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
     if (!isDragOverFile) setIsDragOverFile(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleDragLeave = (e: DragEvent) => {
     e.preventDefault();
     setIsDragOverFile(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setIsDragOverFile(false);
 
@@ -692,7 +692,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   // Paste image from clipboard
-  React.useEffect(() => {
+  useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 

@@ -4,24 +4,17 @@ import {
   AlignRight,
   ArrowDown,
   ArrowUp,
-  Bold,
   BringToFront,
-  Clock,
   Cloud,
   Copy,
   Database,
-  Eye,
-  EyeOff,
-  Lock,
   SendToBack,
   Sparkles,
   Trash2,
-  Unlock,
-  User,
 } from 'lucide-react';
-import React from 'react';
+import type { FC } from 'react';
 
-import { PRESET_COLORS, STICKY_COLORS } from '../lib/constants.ts';
+import { PRESET_COLORS } from '../lib/constants.ts';
 import { CanvasNode, UserProfile } from '../types.ts';
 import { PanelToggleButton } from './common/PanelToggleButton.tsx';
 
@@ -41,7 +34,7 @@ interface PropertyPanelProps {
   onToggleHoverInfo: () => void;
 }
 
-export const PropertyPanel: React.FC<PropertyPanelProps> = ({
+export const PropertyPanel: FC<PropertyPanelProps> = ({
   selectedNodes,
   onUpdateNode,
   onDeleteSelected,

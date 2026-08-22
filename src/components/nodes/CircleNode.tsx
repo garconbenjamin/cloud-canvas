@@ -1,4 +1,5 @@
-import React from 'react';
+import type { FC } from 'react';
+import { useEffect, useState } from 'react';
 
 import { CanvasNode } from '../../types.ts';
 
@@ -8,11 +9,11 @@ interface CircleNodeProps {
   onUpdateText?: (newText: string) => void;
 }
 
-export const CircleNode: React.FC<CircleNodeProps> = ({ node, isSelected, onUpdateText }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [editText, setEditText] = React.useState(node.text || '');
+export const CircleNode: FC<CircleNodeProps> = ({ node, onUpdateText }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(node.text || '');
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditText(node.text || '');
   }, [node.text]);
 

@@ -1,14 +1,14 @@
-import React from 'react';
+import type { FC, ReactNode } from 'react';
 
 interface PanelToggleButtonProps {
   id: string;
   label: string;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
   side?: 'left' | 'right';
 }
 
-export const PanelToggleButton: React.FC<PanelToggleButtonProps> = ({
+export const PanelToggleButton: FC<PanelToggleButtonProps> = ({
   id,
   label,
   onClick,

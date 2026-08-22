@@ -13,7 +13,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import React from 'react';
+import type { ComponentType, FC } from 'react';
 
 import { ToolMode } from '../types.ts';
 
@@ -32,7 +32,7 @@ interface ToolbarProps {
   onTriggerImageUpload: () => void;
 }
 
-export const Toolbar: React.FC<ToolbarProps> = ({
+export const Toolbar: FC<ToolbarProps> = ({
   currentTool,
   onSelectTool,
   canUndo,
@@ -49,7 +49,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const tools: Array<{
     id: ToolMode;
     label: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: ComponentType<{ className?: string }>;
     shortcut: string;
   }> = [
     { id: 'select', label: '選取 (V)', icon: MousePointer, shortcut: 'V' },

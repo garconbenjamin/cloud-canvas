@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 
 import { CanvasNode } from '../../types.ts';
 
@@ -7,7 +7,7 @@ interface ArrowNodeProps {
   isSelected: boolean;
 }
 
-export const ArrowNode: React.FC<ArrowNodeProps> = ({ node, isSelected }) => {
+export const ArrowNode: FC<ArrowNodeProps> = ({ node }) => {
   const strokeColor = node.strokeColor || '#6366f1';
   const strokeWidth = node.strokeWidth || 3;
 

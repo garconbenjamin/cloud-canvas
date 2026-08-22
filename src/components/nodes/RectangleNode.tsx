@@ -1,4 +1,5 @@
-import React from 'react';
+import type { FC, KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 
 import { CanvasNode } from '../../types.ts';
 
@@ -8,11 +9,11 @@ interface RectangleNodeProps {
   onUpdateText?: (newText: string) => void;
 }
 
-export const RectangleNode: React.FC<RectangleNodeProps> = ({ node, isSelected, onUpdateText }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [editText, setEditText] = React.useState(node.text || '');
+export const RectangleNode: FC<RectangleNodeProps> = ({ node, onUpdateText }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(node.text || '');
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditText(node.text || '');
   }, [node.text]);
 
@@ -23,7 +24,7 @@ export const RectangleNode: React.FC<RectangleNodeProps> = ({ node, isSelected, 
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       setIsEditing(false);
     }
