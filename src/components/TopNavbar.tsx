@@ -203,7 +203,7 @@ export const TopNavbar: FC<TopNavbarProps> = ({
       {/* Center / Right Controls */}
       <div className="flex items-center gap-2">
         {/* Open in Second Tab Button (Awesome for testing real-time sync!) */}
-        <button
+        {/* <button
           id="btn-multi-tab-test"
           onClick={handleOpenSecondWindow}
           title="開啟新分頁，將兩個視窗並排即可測試即時多人游標與拖曳同步！"
@@ -211,7 +211,7 @@ export const TopNavbar: FC<TopNavbarProps> = ({
         >
           <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
           <span>開雙視窗測同步</span>
-        </button>
+        </button> */}
 
         {/* Live Active Peers List */}
         <div className="flex items-center -space-x-1.5 px-2 py-1 rounded-xl bg-neutral-950/60 border border-neutral-800">
