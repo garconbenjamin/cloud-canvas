@@ -1,7 +1,6 @@
-import React from 'react';
+import { FC, useCallback, useEffect, useRef, useState } from 'react';
 
 import { Canvas } from './components/Canvas.tsx';
-import { CloudflareDeployModal } from './components/CloudflareDeployModal.tsx';
 import { GoogleAuthModal } from './components/GoogleAuthModal.tsx';
 import { LayersPanel } from './components/LayersPanel.tsx';
 import { Minimap } from './components/Minimap.tsx';
@@ -10,6 +9,7 @@ import { Toolbar } from './components/Toolbar.tsx';
 import { TopNavbar } from './components/TopNavbar.tsx';
 import { syncService } from './lib/syncService.ts';
 import {
+  Board,
   CanvasNode,
   CloudflareStatus,
   ToolMode,
@@ -33,7 +33,7 @@ const LEGACY_DEFAULT_NODE_IDS = new Set([
   'node-r2-card',
 ]);
 
-const HomeScreen: React.FC<{
+const HomeScreen: FC<{
   isAuthenticated: boolean;
   ownerId: string;
   onLogin: () => void;
@@ -41,9 +41,9 @@ const HomeScreen: React.FC<{
   onOpen: (id: string) => void;
   error: string;
 }> = ({ isAuthenticated, ownerId, onLogin, onCreate, onOpen, error }) => {
-  const [boardId, setBoardId] = React.useState('');
-  const [boards, setBoards] = React.useState<Array<{ id: string; title: string }>>([]);
-  React.useEffect(() => {
+  const [boardId, setBoardId] = useState('');
+  const [boards, setBoards] = useState<Array<{ id: string; title: string }>>([]);
+  useEffect(() => {
     if (!isAuthenticated) return;
     fetch(`/api/boards?ownerId=${encodeURIComponent(ownerId)}`)
       .then((res) => res.json())
@@ -124,23 +124,23 @@ function getBoardIdFromPath(): string | null {
 
 export default function App() {
   // Board & Nodes State
-  const [routeBoardId, setRouteBoardId] = React.useState(getBoardIdFromPath);
+  const [routeBoardId, setRouteBoardId] = useState(getBoardIdFromPath);
   const boardId = routeBoardId || 'pending';
-  const [boardTitle, setBoardTitle] = React.useState('CloudCanvas 協作主畫布');
-  const [boardOwnerId, setBoardOwnerId] = React.useState('');
-  const [nodes, setNodes] = React.useState<CanvasNode[]>([]);
-  const [selectedNodeIds, setSelectedNodeIds] = React.useState<string[]>([]);
-  const [currentTool, setCurrentTool] = React.useState<ToolMode>('select');
+  const [boardTitle, setBoardTitle] = useState('CloudCanvas 協作主畫布');
+  const [boardOwnerId, setBoardOwnerId] = useState('');
+  const [nodes, setNodes] = useState<CanvasNode[]>([]);
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [currentTool, setCurrentTool] = useState<ToolMode>('select');
 
   // Viewport (Infinite Canvas Pan & Zoom)
-  const [viewport, setViewport] = React.useState<Viewport>({
+  const [viewport, setViewport] = useState<Viewport>({
     x: 120,
     y: 80,
     zoom: 1,
   });
 
   // User Authentication & Presences
-  const [currentUser, setCurrentUser] = React.useState<UserProfile>(() => {
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('cloudcanvas_user');
       if (saved) {
@@ -154,18 +154,19 @@ export default function App() {
     return GUEST_USER;
   });
 
-  const [onlinePresences, setOnlinePresences] = React.useState<UserPresence[]>([]);
-  const [cloudflareStatus, setCloudflareStatus] = React.useState<CloudflareStatus | null>(null);
+  const [onlinePresences, setOnlinePresences] = useState<UserPresence[]>([]);
+  const [cloudflareStatus, setCloudflareStatus] = useState<CloudflareStatus | null>(null);
 
   // Modals & Panels UI State
-  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
-  const [isDeployModalOpen, setIsDeployModalOpen] = React.useState(false);
-  const [isLayersPanelOpen, setIsLayersPanelOpen] = React.useState(false);
-  const [isPropertyPanelOpen, setIsPropertyPanelOpen] = React.useState(true);
-  const [showHoverInfo, setShowHoverInfo] = React.useState(true);
-  const [homeError, setHomeError] = React.useState('');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
+  const [isPropertyPanelOpen, setIsPropertyPanelOpen] = useState(true);
+  const [showHoverInfo, setShowHoverInfo] = useState(true);
+  const [homeError, setHomeError] = useState('');
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [boardListError, setBoardListError] = useState('');
 
-  const openBoard = React.useCallback((id: string) => {
+  const openBoard = useCallback((id: string) => {
     window.history.pushState({}, '', `/board/${id}`);
     setRouteBoardId(id);
   }, []);
@@ -177,17 +178,55 @@ export default function App() {
     return Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
   };
 
+  const loadBoards = useCallback(async () => {
+    if (!currentUser.id.startsWith('google_')) return;
+    try {
+      const res = await fetch(`/api/boards?ownerId=${encodeURIComponent(currentUser.id)}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || '載入畫布列表失敗');
+      setBoards(data.boards || []);
+      setBoardListError('');
+    } catch (error) {
+      setBoardListError(error instanceof Error ? error.message : '載入畫布列表失敗');
+    }
+  }, [currentUser.id]);
+
+  const handleCreateBoard = useCallback(async () => {
+    setHomeError('');
+    setBoardListError('');
+    const id = createBoardId();
+    try {
+      const res = await fetch('/api/boards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ownerId: currentUser.id, title: '未命名畫布' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || '建立畫布失敗');
+      setBoards((prev) => [data.board, ...prev.filter((board) => board.id !== data.board.id)]);
+      openBoard(id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '建立畫布失敗';
+      setHomeError(message);
+      setBoardListError(message);
+    }
+  }, [currentUser.id, openBoard]);
+
+  useEffect(() => {
+    loadBoards();
+  }, [loadBoards]);
+
   // Undo / Redo History Stack
-  const [history, setHistory] = React.useState<CanvasNode[][]>([]);
-  const [historyIndex, setHistoryIndex] = React.useState<number>(-1);
-  const isHistoryUpdate = React.useRef(false);
+  const [history, setHistory] = useState<CanvasNode[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const isHistoryUpdate = useRef(false);
 
   // Hidden file input ref for image upload tool
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const pendingUploadIds = React.useRef(new Set<string>());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingUploadIds = useRef(new Set<string>());
 
   // 1. Initial Data Fetch from Cloudflare D1 API
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchBoardData = async () => {
       if (!routeBoardId) return;
       try {
@@ -218,7 +257,7 @@ export default function App() {
         const res = await fetch('/api/config');
         const data = await res.json();
         setCloudflareStatus(data);
-      } catch (err) {}
+      } catch {}
     };
 
     fetchBoardData();
@@ -228,7 +267,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [routeBoardId, boardId]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!routeBoardId) return;
     fetch(`/api/board/${routeBoardId}`)
       .then((res) => (res.ok ? res.json() : null))
@@ -242,7 +281,7 @@ export default function App() {
   }, [routeBoardId]);
 
   // 2. Setup Real-time WebSocket & Broadcast Sync
-  React.useEffect(() => {
+  useEffect(() => {
     if (!routeBoardId) return;
     syncService.connect(boardId, currentUser);
 
@@ -297,7 +336,7 @@ export default function App() {
   }, [routeBoardId, boardId, currentUser]);
 
   // Persist user changes to localStorage
-  const handleSelectUser = React.useCallback((user: UserProfile) => {
+  const handleSelectUser = useCallback((user: UserProfile) => {
     setCurrentUser(user);
     if (typeof window !== 'undefined') {
       localStorage.setItem('cloudcanvas_user', JSON.stringify(user));
@@ -305,7 +344,7 @@ export default function App() {
     syncService.updateUserInfo(user);
   }, []);
 
-  const handleSignOut = React.useCallback(() => {
+  const handleSignOut = useCallback(() => {
     setCurrentUser(GUEST_USER);
     localStorage.removeItem('cloudcanvas_user');
     syncService.updateUserInfo(GUEST_USER);
@@ -669,7 +708,7 @@ export default function App() {
         setNodes(data.nodes);
         setSelectedNodeIds([]);
       }
-    } catch (err) {}
+    } catch {}
   };
 
   const handleUpdateBoardTitle = async (title: string) => {
@@ -708,22 +747,7 @@ export default function App() {
           isAuthenticated={isAuthenticated}
           ownerId={currentUser.id}
           onLogin={() => setIsAuthModalOpen(true)}
-          onCreate={async () => {
-            setHomeError('');
-            const id = createBoardId();
-            try {
-              const res = await fetch('/api/boards', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, ownerId: currentUser.id, title: '未命名畫布' }),
-              });
-              const data = await res.json();
-              if (!res.ok || !data.success) throw new Error(data.error || '建立畫布失敗');
-              openBoard(id);
-            } catch (error) {
-              setHomeError(error instanceof Error ? error.message : '建立畫布失敗');
-            }
-          }}
+          onCreate={handleCreateBoard}
           onOpen={openBoard}
           error={homeError}
         />
@@ -765,17 +789,21 @@ export default function App() {
 
       {/* Top Navigation Bar */}
       <TopNavbar
+        boardId={boardId}
         boardTitle={boardTitle}
         onUpdateBoardTitle={handleUpdateBoardTitle}
         canEditBoardTitle={currentUser.id === boardOwnerId}
         boardOwnerName={
           currentUser.id === boardOwnerId ? currentUser.name : boardOwnerId || '未知使用者'
         }
+        boards={boards}
+        boardListError={boardListError}
+        onRefreshBoards={loadBoards}
+        onOpenBoard={openBoard}
+        onCreateBoard={handleCreateBoard}
         onlineUsers={onlinePresences}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onOpenDeployModal={() => setIsDeployModalOpen(true)}
-        cloudflareStatus={cloudflareStatus}
         onResetBoard={handleResetBoard}
         onExportCanvas={handleExportCanvas}
       />
@@ -884,13 +912,6 @@ export default function App() {
         onSelectUser={handleSelectUser}
         onSignOut={handleSignOut}
         googleClientId={cloudflareStatus?.googleClientId || import.meta.env.VITE_GOOGLE_CLIENT_ID}
-      />
-
-      {/* Cloudflare Deploy Modal */}
-      <CloudflareDeployModal
-        isOpen={isDeployModalOpen}
-        onClose={() => setIsDeployModalOpen(false)}
-        status={cloudflareStatus}
       />
     </div>
   );
